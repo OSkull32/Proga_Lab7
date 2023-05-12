@@ -1,0 +1,3 @@
+rootProject.name = 'Proga_Lab7'
+include 'common', 'client', 'server'
+
