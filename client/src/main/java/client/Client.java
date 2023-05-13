@@ -1,10 +1,14 @@
 package client;
 
+import client.utility.AuthenticationHandler;
 import client.utility.UserHandler;
 import common.exceptions.ConnectionErrorException;
 import common.exceptions.InvalidValueException;
+import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 import common.interaction.requests.Request;
 import common.interaction.responses.Response;
+import common.interaction.responses.ResponseCode;
 import common.utility.UserConsole;
 
 import java.io.*;
@@ -24,13 +28,17 @@ public class Client {
     private SocketChannel socketChannel;
     private ObjectOutputStream serverWriter;
     private ObjectInputStream serverReader;
+    private AuthenticationHandler authenticationHandler;
+    private User user;
 
-    public Client(String host, int port, int reconnectionTimeout, int maxReconnectionAttempts, UserHandler userHandler) {
+    public Client(String host, int port, int reconnectionTimeout, int maxReconnectionAttempts, UserHandler userHandler,
+                  AuthenticationHandler authenticationHandler) {
         this.host = host;
         this.port = port;
         this.reconnectionTimeout = reconnectionTimeout;
         this.maxReconnectionAttempts = maxReconnectionAttempts;
         this.userHandler = userHandler;
+        this.authenticationHandler = authenticationHandler;
     }
 
 
@@ -39,11 +47,12 @@ public class Client {
      */
     public void run() {
         try {
-            boolean processingStatus = true;
-            while (processingStatus) {
+            while (true) {
                 try {
                     connectToServer();
-                    processingStatus = processRequestToServer();
+                    processAuthentication();
+                    processRequestToServer();
+                    break;
                 } catch (ConnectionErrorException ex) {
                     if (reconnectionAttempts >= maxReconnectionAttempts) {
                         UserConsole.printCommandError("Превышено количество попыток подключения");
@@ -99,13 +108,13 @@ public class Client {
     /**
      * Процесс запроса сервера
      */
-    private boolean processRequestToServer() {
+    private void processRequestToServer() {
         Request requestToServer = null;
         Response serverResponse = null;
         do {
             try {
-                requestToServer = serverResponse != null ? userHandler.handle(serverResponse.getResponseCode()) :
-                        userHandler.handle(null);
+                requestToServer = serverResponse != null ? userHandler.handle(serverResponse.getResponseCode(), user) :
+                        userHandler.handle(null, user);
                 if (requestToServer.isEmpty()) continue;
                 serverWriter.writeObject(requestToServer);
                 serverResponse = (Response) serverReader.readObject();
@@ -117,7 +126,6 @@ public class Client {
             } catch (IOException ex) {
                 UserConsole.printCommandError("Соединение с сервером разорвано");
                 try {
-                    reconnectionAttempts++;
                     connectToServer();
                 } catch (ConnectionErrorException | InvalidValueException reconnectionEx) {
                     if (requestToServer.getCommandName().equals("exit"))
@@ -126,7 +134,31 @@ public class Client {
                 }
             }
         } while (!requestToServer.getCommandName().equals("exit"));
-        return false;
     }
 
+    private void processAuthentication() {
+        Request requestToServer = null;
+        Response serverResponse = null;
+        do {
+            try {
+                requestToServer = authenticationHandler.handle();
+                if (requestToServer.isEmpty()) continue;
+                serverWriter.writeObject(requestToServer);
+                serverResponse = (Response) serverReader.readObject();
+                UserConsole.printCommandText(serverResponse.getResponseBody());
+            } catch (InvalidClassException | NotSerializableException ex) {
+                UserConsole.printCommandError("Ошибка при отправке данных на сервер");
+            } catch (ClassNotFoundException ex) {
+                UserConsole.printCommandError("Произошла ошибка при чтении полученных данных");
+            } catch (IOException ex) {
+                UserConsole.printCommandError("Соединение с сервером разорвано");
+                try {
+                    connectToServer();
+                } catch (ConnectionErrorException | InvalidValueException connectEx) {
+                    UserConsole.printCommandError("Попробуйте авторизоваться позднее");
+                }
+            }
+        } while (serverResponse == null || !serverResponse.getResponseCode().equals(ResponseCode.OK));
+        user = requestToServer.getUser();
+    }
 }
