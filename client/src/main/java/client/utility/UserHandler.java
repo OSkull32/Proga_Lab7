@@ -6,6 +6,7 @@ import common.exceptions.CommandUsageException;
 import common.exceptions.ErrorInScriptException;
 import common.exceptions.RecursiveException;
 import common.interaction.FlatValue;
+import common.interaction.User;
 import common.interaction.requests.Request;
 import common.interaction.responses.ResponseCode;
 import common.utility.FlatReader;
@@ -37,7 +38,7 @@ public class UserHandler {
      * @param serverResponseCode последний ответ сервера
      * @return Новый запрос к серверу
      */
-    public Request handle(ResponseCode serverResponseCode) {
+    public Request handle(ResponseCode serverResponseCode, User user) {
         String userInput;
         String[] userCommand;
         ProcessingCode processingCode;
@@ -84,15 +85,15 @@ public class UserHandler {
                 switch (processingCode) {
                     case OBJECT -> {
                         Flat flatAddValue = generateFlatAdd();
-                        return new Request(userCommand[0], userCommand[1], flatAddValue);
+                        return new Request(userCommand[0], userCommand[1], flatAddValue, user);
                     }
                     case UPDATE_OBJECT -> {
                         Flat flatUpdateValue = generateFlatUpdate();
-                        return new Request(userCommand[0], userCommand[1], flatUpdateValue);
+                        return new Request(userCommand[0], userCommand[1], flatUpdateValue, user);
                     }
                     case UPDATE_OBJECT_HOUSE -> {
                         House houseFilterValue = generateHouseFilter();
-                        return new Request(userCommand[0], userCommand[1], houseFilterValue);
+                        return new Request(userCommand[0], userCommand[1], houseFilterValue, user);
                     }
                     case SCRIPT -> {
                         File scriptFile = new File(userCommand[1]);
@@ -121,9 +122,9 @@ public class UserHandler {
                 userScanner = scannerStack.pop();
             }
             scriptStack.clear();
-            return new Request();
+            return new Request(user);
         }
-        return new Request(userCommand[0], userCommand[1]);
+        return new Request(userCommand[0], userCommand[1], null, user);
     }
 
     /**
@@ -137,7 +138,7 @@ public class UserHandler {
                 case "" -> {
                     return ProcessingCode.ERROR;
                 }
-                case "help", "info", "show" -> {
+                case "help", "info", "show", "clear", "exit", "history", "server_exit" -> {
                     if (!commandArgument.isEmpty()) throw new CommandUsageException();
                 }
                 case "insert" -> {
@@ -148,27 +149,12 @@ public class UserHandler {
                     if (commandArgument.isEmpty() || Integer.parseInt(commandArgument) <= 0) throw new CommandUsageException("<Key'>0'> {element}");
                     return ProcessingCode.UPDATE_OBJECT;
                 }
-                case "remove_key" -> {
+                case "remove_key", "remove_greater_key", "remove_lower_key" -> {
                     if (commandArgument.isEmpty()) throw new CommandUsageException("<Key>");
-                }
-                case "clear" -> {
-                    if (!commandArgument.isEmpty()) throw new CommandUsageException();
                 }
                 case "execute_script" -> {
                     if (commandArgument.isEmpty()) throw new CommandUsageException("<file_name>");
                     return ProcessingCode.SCRIPT;
-                }
-                case "exit" -> {
-                    if (!commandArgument.isEmpty()) throw new CommandUsageException();
-                }
-                case "history" -> {
-                    if (!commandArgument.isEmpty()) throw new CommandUsageException();
-                }
-                case "remove_greater_key" -> {
-                    if (commandArgument.isEmpty()) throw new CommandUsageException("<Key>");
-                }
-                case "remove_lower_key" -> {
-                    if (commandArgument.isEmpty()) throw new CommandUsageException("<Key>");
                 }
                 case "remove_all_by_view" -> {
                     if (commandArgument.isEmpty()) throw new CommandUsageException("<View>");
@@ -179,9 +165,6 @@ public class UserHandler {
                 }
                 case "print_field_ascending_house" -> {
                     if (!commandArgument.isEmpty()) throw new CommandUsageException("<House>");
-                }
-                case "server_exit" -> {
-                    if (!commandArgument.isEmpty()) throw new CommandUsageException();
                 }
                 default -> {
                     UserConsole.printCommandTextNext("Команда '" + command + "' не найдена. Наберите 'help' для справки.");

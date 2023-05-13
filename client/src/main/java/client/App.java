@@ -1,5 +1,6 @@
 package client;
 
+import client.utility.AuthenticationHandler;
 import client.utility.UserHandler;
 import common.exceptions.InvalidValueException;
 import common.exceptions.WrongArgumentException;
@@ -25,8 +26,9 @@ public class App {
         String[] as = new String[]{"localhost","1821"};
         if (!initializeConnectionAddress(as)) return;
         Scanner userScanner = new Scanner(System.in);
+        AuthenticationHandler authenticationHandler = new AuthenticationHandler(userScanner);
         UserHandler userHandler = new UserHandler(userScanner);
-        Client client = new Client(host, port, RECONNECTION_TIMEOUT, MAX_RECONNECTION_ATTEMPTS, userHandler);
+        Client client = new Client(host, port, RECONNECTION_TIMEOUT, MAX_RECONNECTION_ATTEMPTS, userHandler, authenticationHandler);
         client.run();
         userScanner.close();
     }
