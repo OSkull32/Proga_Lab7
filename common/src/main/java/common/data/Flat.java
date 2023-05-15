@@ -1,6 +1,7 @@
 package common.data;
 
 import com.google.gson.annotations.JsonAdapter;
+import common.interaction.User;
 import common.utility.LocalDateTimeAdapter;
 
 import java.io.Serializable;
@@ -46,6 +47,7 @@ public class Flat implements Comparable<Flat>, Serializable {
 
     // Дом объекта класса. Поле может быть null
     private House house;
+    private User owner;
 
     /**
      * Конструктор объекта класса
@@ -86,8 +88,23 @@ public class Flat implements Comparable<Flat>, Serializable {
         this.creationDate = LocalDateTime.now();
     }
 
+    public Flat(int id, String name, Coordinates coordinates, LocalDateTime creationDate, int area, long numberOfRooms, long numberOfBathrooms, Furnish furnish, View view, House house, User owner) {
+        this.id = id;
+        this.name = name;
+        this.coordinates = coordinates;
+        this.creationDate = creationDate;
+        this.area = area;
+        this.numberOfRooms = numberOfRooms;
+        this.numberOfBathrooms = numberOfBathrooms;
+        this.furnish = furnish;
+        this.view = view;
+        this.house = house;
+        this.owner = owner;
+    }
+
     /**
      * Метод, возвращающий имя объекта класса
+     *
      *
      * @return name
      */

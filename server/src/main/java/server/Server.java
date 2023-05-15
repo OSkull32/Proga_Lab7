@@ -6,6 +6,7 @@ import common.exceptions.OpeningServerSocketException;
 import common.interaction.requests.Request;
 import common.interaction.responses.Response;
 import common.interaction.responses.ResponseCode;
+import server.commands.CommandManager;
 import server.utility.CollectionManager;
 import server.utility.JsonParser;
 import server.utility.RequestHandler;
@@ -22,16 +23,22 @@ import java.util.Scanner;
  */
 public class Server {
     private final int port;
-    private final int soTimeout;
-    private final RequestHandler requestHandler;
-    private final CollectionManager collectionManager;
+    private int soTimeout;
+    private RequestHandler requestHandler;
+    private CollectionManager collectionManager;
     private ServerSocket serverSocket;
+    private CommandManager commandManager;
 
     public Server(int port, int soTimeout, RequestHandler requestHandler, CollectionManager collectionManager) {
         this.port = port;
         this.soTimeout = soTimeout;
         this.requestHandler = requestHandler;
         this.collectionManager = collectionManager;
+    }
+
+    public Server(int port, CommandManager commandManager) {
+        this.port = port;
+        this.commandManager = commandManager;
     }
 
     public void run() {
