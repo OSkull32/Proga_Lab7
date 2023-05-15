@@ -2,9 +2,12 @@ package server.utility;
 
 import common.data.Flat;
 import common.data.View;
+import common.exceptions.DatabaseHandlingException;
 import common.exceptions.InvalidValueException;
 import common.utility.Console;
 import common.utility.FlatReader;
+import common.utility.UserConsole;
+import server.App;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -18,17 +21,19 @@ import java.util.stream.Stream;
 public class CollectionManager {
 
     // Коллекция, с которой осуществляется работа
-    private final Hashtable<Integer, Flat> hashtable;
+    private Hashtable<Integer, Flat> hashtable;
 
     private static final HashSet<Integer> allId = new HashSet<>();
-    private final Console console;
+    private Console console;
     // Время инициализации коллекции
-    private final LocalDateTime collectionInitialization;
+    private LocalDateTime collectionInitialization;
 
     /**
      * Максимальный ID у объектов коллекции
      */
     public static final int MAX_ID = 100000;
+
+    private DatabaseCollectionManager databaseCollectionManager;
 
     /**
      * Конструктор, создающий новый объект менеджера коллекции
@@ -45,6 +50,25 @@ public class CollectionManager {
         }
         String i = LocalDateTime.now().toString();
         collectionInitialization = LocalDateTime.parse(i);
+    }
+
+    public CollectionManager(DatabaseCollectionManager databaseCollectionManager, Console console) {
+        this.databaseCollectionManager = databaseCollectionManager;
+        this.console = console;
+
+        loadCollection();
+    }
+
+    private void loadCollection() {
+        try {
+            hashtable = databaseCollectionManager.getCollection();
+            UserConsole.printCommandText("Коллекция загружена");
+            App.logger.info("Коллекция загружена");
+        } catch (DatabaseHandlingException ex) {
+            hashtable = new Hashtable<>();
+            UserConsole.printCommandError("Коллекция не может быть загружена");
+            App.logger.severe("Коллекция не может быть загружена");
+        }
     }
 
     /**
