@@ -7,7 +7,7 @@ import java.sql.*;
 
 public class DatabaseHandler {
     public static final String FLAT_TABLE = "flat";
-    public static final String USER_TABLE = "user";
+    public static final String USER_TABLE = "my_user";
     public static final String COORDINATES_TABLE = "coordinates";
     public static final String HOUSE_TABLE = "house";
 
