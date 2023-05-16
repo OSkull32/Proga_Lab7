@@ -37,7 +37,8 @@ public class App {
         ServerConsole serverConsole = new ServerConsole();
         CollectionManager collectionManager = new CollectionManager(databaseCollectionManager, serverConsole);
         CommandManager commandManager = new CommandManager(serverConsole, collectionManager);
-        Server server = new Server(port, commandManager);
+        RequestHandler requestHandler = new RequestHandler(commandManager, serverConsole);
+        Server server = new Server(port, CONNECTION_TIMEOUT, requestHandler, collectionManager);
         server.run();
         databaseHandler.closeConnection();
 
