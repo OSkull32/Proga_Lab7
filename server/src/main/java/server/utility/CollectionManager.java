@@ -56,6 +56,8 @@ public class CollectionManager {
         this.databaseCollectionManager = databaseCollectionManager;
         this.console = console;
 
+        String i = LocalDateTime.now().toString();
+        collectionInitialization = LocalDateTime.parse(i);
         loadCollection();
     }
 

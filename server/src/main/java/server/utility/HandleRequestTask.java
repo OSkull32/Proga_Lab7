@@ -20,7 +20,8 @@ public class HandleRequestTask extends Thread {
                 PasswordHasher.hashPassword(request.getUser().getPassword()));
         ResponseCode responseCode = executeCommand(request.getCommandName(), request.getCommandStringArgument(),
                 request.getCommandObjectArgument(), hashedUser);
-        return new Response(responseCode, ServerConsole.getAndClear());
+        return null;
+        //return new Response(responseCode, ServerConsole.getAndClear());
     }
 
 
@@ -37,6 +38,6 @@ public class HandleRequestTask extends Thread {
                 PasswordHasher.hashPassword(request.getUser().getPassword()));
         ResponseCode responseCode = executeCommand(request.getCommandName(), request.getCommandStringArgument(),
                 request.getCommandObjectArgument(), hashedUser);
-        new Response(responseCode, ServerConsole.getAndClear());
+        //new Response(responseCode, ServerConsole.getAndClear());
     }
 }
