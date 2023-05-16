@@ -1,28 +1,29 @@
 package server;
 
 import common.data.Flat;
-import common.exceptions.CollectionException;
-import common.exceptions.InvalidValueException;
 import common.exceptions.WrongArgumentException;
-import common.utility.Console;
 import common.utility.UserConsole;
 import server.commands.CommandManager;
 import server.utility.*;
 
-import java.io.File;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InvalidClassException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Hashtable;
 import java.util.logging.Logger;
 
 public class App {
-    private static String databaseUsername = "s368087";
     private static int port;
+
+    //database info
+    private static String databaseUsername;
     private static String databaseHost;
+    private static int databasePort;
+    private static String databaseName;
     private static String databasePassword;
     private static String databaseAddress;
+
     public static final int PORT = 1821;
     public static final int CONNECTION_TIMEOUT = 300000;
     public static final Logger logger = Logger.getLogger(Server.class.getName());
@@ -30,7 +31,15 @@ public class App {
     public static Hashtable<Integer, Flat> hashtable;
 
     public static void main(String[] args) {
-        if (!initialize(args)) return;
+        if (args.length != 2) {
+            var msg = "Использование: java -jar jarName <connection_config_file> <port>";
+            UserConsole.printCommandError(msg);
+            App.logger.severe(msg);
+            return;
+        }
+        if (!initializeDatabaseConnection(args[0]) || !initializePort(args[1])) return;
+
+
         DatabaseHandler databaseHandler = new DatabaseHandler(databaseAddress, databaseUsername, databasePassword);
         DatabaseUserManager databaseUserManager = new DatabaseUserManager(databaseHandler);
         DatabaseCollectionManager databaseCollectionManager = new DatabaseCollectionManager(databaseHandler, databaseUserManager);
@@ -38,7 +47,7 @@ public class App {
         CollectionManager collectionManager = new CollectionManager(databaseCollectionManager, serverConsole);
         CommandManager commandManager = new CommandManager(serverConsole, collectionManager);
         RequestHandler requestHandler = new RequestHandler(commandManager, serverConsole);
-        Server server = new Server(port, CONNECTION_TIMEOUT, requestHandler, collectionManager);
+        Server server = new Server(port, 30000, requestHandler, collectionManager);
         server.run();
         databaseHandler.closeConnection();
 
@@ -81,29 +90,57 @@ public class App {
         server.run();*/
     }
 
-    private static boolean initialize(String[] args) {
-        try {
-            if (args.length != 3) throw new WrongArgumentException();
-            port = Integer.parseInt(args[0]);
-            if (port < 0) throw new InvalidValueException();
-            databaseHost = args[1];
-            databasePassword = args[2];
-            databaseAddress = "jdbc:postgresql://" + databaseHost + ":5432/studs";
-            return true;
-        } catch (WrongArgumentException ex) {
-            String jarName = new File(App.class.getProtectionDomain().getCodeSource().getLocation().
-                    getPath()).getName();
-            UserConsole.printCommandTextNext("Использование: 'java -jar " + jarName + " <port> <db_host> <db_password>");
-        } catch (NumberFormatException ex) {
-            UserConsole.printCommandError("Порт должен быть числом");
-            App.logger.severe("Порт должен быть числом");
-        } catch (InvalidValueException ex) {
-            UserConsole.printCommandError("Порт не может быть числом");
-            App.logger.severe("Порт не может быть числом");
+    private static boolean initializeDatabaseConnection(String fileName) {
+        Path connInfoFile = Path.of(fileName);
+        if (Files.exists(connInfoFile) && Files.isReadable(connInfoFile)) {
+            try (BufferedReader reader = Files.newBufferedReader(connInfoFile)) {
+                databaseUsername = reader.readLine().replaceAll(".*:", "").trim();
+                databaseHost = reader.readLine().replaceAll(".*:", "").trim();
+                databasePort = Integer.parseInt(reader.readLine().replaceAll(".*:", "").trim());
+                databaseName = reader.readLine().replaceAll(".*:", "").trim();
+                databasePassword = reader.readLine().replaceAll(".*:", "").trim();
+
+                if (databasePort < 0 || databasePort > 65535) throw new WrongArgumentException();
+
+                databaseAddress = "jdbc:postgresql://" + databaseHost + ":" + databasePort + "/" + databaseName;
+                return true;
+            } catch (IOException e) {
+                var msg = "Ошибка при работе с файлом конфигурации подключения к БД";
+                UserConsole.printCommandError(msg);
+                App.logger.severe(msg);
+                return false;
+            } catch (NumberFormatException | WrongArgumentException e) {
+                var msg = "Недопустимое значение порта в файле конфигурации подключения к БД";
+                UserConsole.printCommandError(msg);
+                App.logger.severe(msg);
+                return false;
+            }
+        } else {
+            var msg = "Файл не существует по указанному пути или нечитаем";
+            UserConsole.printCommandError(msg);
+            App.logger.severe(msg);
+            return false;
         }
-        App.logger.severe("Ошибка инициализации порта запуска");
-        return false;
     }
+
+    private static boolean initializePort(String p) {
+        try {
+            port = Integer.parseInt(p);
+            if (port < 0 || port > 65535) {
+                var msg = "порт не попадает в требуемый диапазон (0 <= port <= 65535)";
+                UserConsole.printCommandError(msg);
+                App.logger.severe(msg);
+                return false;
+            }
+            return true;
+        } catch (NumberFormatException e) {
+            var msg = "Порт должен быть числом";
+            UserConsole.printCommandError(msg);
+            App.logger.severe(msg);
+            return false;
+        }
+    }
+
 
     /*private static Hashtable<Integer, Flat> getHashtableFromFile() throws Exception {
         Path filePath;
