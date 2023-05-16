@@ -35,7 +35,7 @@ public class DatabaseHandler {
     public static final String HOUSE_TABLE_NAME_COLUMN = "name";
     public static final String HOUSE_TABLE_YEAR_COLUMN = "year";
     public static final String HOUSE_TABLE_NUMBER_OF_FLOORS_COLUMN = "number_of_floors";
-    public static final String HOUSE_TABLE_NUMBER_OF_FLATS_ON_FLOOR_COLUMN = "number_of_flats_on_floor";
+    public static final String HOUSE_TABLE_NUMBER_OF_FLATS_ON_FLOOR_COLUMN = "number_of_flats_on_floors";
     public static final String HOUSE_TABLE_NUMBER_OF_LIFTS_COLUMN = "number_of_lifts";
 
     private final String JDBC_DRIVER = "org.postgresql.Driver";

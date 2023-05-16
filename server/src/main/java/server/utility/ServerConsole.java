@@ -7,7 +7,7 @@ import java.util.Scanner;
 public class ServerConsole implements Console {
 
     private final StringBuilder builder = new StringBuilder();
-    private static StringBuilder stringBuilder = new StringBuilder();
+    private static final StringBuilder stringBuilder = new StringBuilder();
 
     @Override
     public String readLine() {
@@ -44,9 +44,9 @@ public class ServerConsole implements Console {
 
     }
 
-    public static String getAndClear() {
-        String toReturn = stringBuilder.toString();
-        stringBuilder.delete(0, stringBuilder.length());
+    public String getAndClear() {
+        String toReturn = builder.toString();
+        builder.delete(0, builder.length());
         return toReturn;
     }
 

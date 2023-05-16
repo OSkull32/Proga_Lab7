@@ -119,14 +119,12 @@ public class DatabaseCollectionManager {
         PreparedStatement preparedStatement = null;
         try {
             preparedSelectAllStatement = databaseHandler.getPreparedStatement(SELECT_ALL_FLAT, false);
-            preparedStatement = databaseHandler.getPreparedStatement(SELECT_FLAT_ID, false);
-            ResultSet res = preparedStatement.executeQuery();
             ResultSet resultSet = preparedSelectAllStatement.executeQuery();
-            int key = res.getInt(DatabaseHandler.FLAT_TABLE_ID_COLUMN);
             while (resultSet.next()) {
-                flatList.put(key, createFlat(resultSet));
+                flatList.put(1, createFlat(resultSet));
             }
         } catch (SQLException ex) {
+            ex.printStackTrace();
             throw new DatabaseHandlingException();
         } finally {
             databaseHandler.closePreparedStatement(preparedSelectAllStatement);
@@ -182,6 +180,7 @@ public class DatabaseCollectionManager {
             preparedSelectHouseStatement = databaseHandler.getPreparedStatement(SELECT_HOUSE_BY_ID, false);
             preparedSelectHouseStatement.setInt(1, houseId);
             ResultSet resultSet = preparedSelectHouseStatement.executeQuery();
+            //UserConsole.printCommandTextNext(String.valueOf(resultSet.next()));
             App.logger.info("Выполнен запрос SELECT_HOUSE_BY_ID");
             if (resultSet.next()) {
                 house = new House(resultSet.getString(DatabaseHandler.HOUSE_TABLE_NAME_COLUMN),
@@ -192,7 +191,7 @@ public class DatabaseCollectionManager {
             } else throw new SQLException();
         } catch (SQLException ex) {
             App.logger.severe("Произошла ошибка при выполнении запроса SELECT_HOUSE_BY_ID");
-            throw new SQLException();
+            throw new SQLException(ex);
         } finally {
             databaseHandler.closePreparedStatement(preparedSelectHouseStatement);
         }
