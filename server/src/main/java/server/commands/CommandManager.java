@@ -2,6 +2,7 @@ package server.commands;
 
 import common.exceptions.InvalidCommandException;
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 import common.utility.Console;
 import server.utility.CollectionManager;
 
@@ -73,6 +74,14 @@ public class CommandManager {
             executeCommand(inputs);
         } catch (InvalidCommandException | WrongArgumentException e) {
             console.printCommandError(e.getMessage());
+        }
+    }
+
+    public void executeCommand(String command, String args, Object commandObjectArgument, User user) {
+        this.commandObjectArgument = commandObjectArgument;
+        try {
+            executeCommand(new String[]{command, args, String.valueOf(user)});
+        } catch (InvalidCommandException | WrongArgumentException ignored) {
         }
     }
 

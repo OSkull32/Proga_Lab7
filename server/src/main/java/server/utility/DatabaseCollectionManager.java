@@ -13,8 +13,6 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.NavigableMap;
-import java.util.NavigableSet;
 
 public class DatabaseCollectionManager {
     private final String SELECT_ALL_FLAT = "SELECT * FROM " + DatabaseHandler.FLAT_TABLE;
@@ -118,10 +116,13 @@ public class DatabaseCollectionManager {
     public Hashtable<Integer, Flat> getCollection() throws DatabaseHandlingException {
         Hashtable<Integer, Flat> flatList = new Hashtable<>();
         PreparedStatement preparedSelectAllStatement = null;
+        PreparedStatement preparedStatement = null;
         try {
             preparedSelectAllStatement = databaseHandler.getPreparedStatement(SELECT_ALL_FLAT, false);
+            preparedStatement = databaseHandler.getPreparedStatement(SELECT_FLAT_ID, false);
+            ResultSet res = preparedStatement.executeQuery();
             ResultSet resultSet = preparedSelectAllStatement.executeQuery();
-            int key = resultSet.getInt(DatabaseHandler.FLAT_TABLE_ID_COLUMN);
+            int key = res.getInt(DatabaseHandler.FLAT_TABLE_ID_COLUMN);
             while (resultSet.next()) {
                 flatList.put(key, createFlat(resultSet));
             }
