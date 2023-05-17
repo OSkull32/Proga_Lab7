@@ -2,6 +2,7 @@
 /test-files/
 /my_resources/
 my_collection.json
+conninfo.txt
 .gradle
 /.idea/
 build/
