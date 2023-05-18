@@ -43,13 +43,23 @@ public class App {
         DatabaseHandler databaseHandler = new DatabaseHandler(databaseAddress, databaseUsername, databasePassword);
         DatabaseUserManager databaseUserManager = new DatabaseUserManager(databaseHandler);
         DatabaseCollectionManager databaseCollectionManager = new DatabaseCollectionManager(databaseHandler, databaseUserManager);
+
         ServerConsole serverConsole = new ServerConsole();
         CollectionManager collectionManager = new CollectionManager(databaseCollectionManager, serverConsole);
         CommandManager commandManager = new CommandManager(serverConsole, collectionManager);
-        RequestHandler requestHandler = new RequestHandler(commandManager, serverConsole);
-        Server server = new Server(port, 30000, requestHandler, collectionManager);
+
+        //RequestHandler requestHandler = new RequestHandler(commandManager, serverConsole);
+        HandleRequest handleRequest = new HandleRequest(commandManager, serverConsole);
+
+        Server server = new Server(port, handleRequest, collectionManager);
+
+
+        new Thread(server::sendResponses).start();
+        new Thread(server::processClientRequest).start();
         server.run();
-        databaseHandler.closeConnection();
+
+
+        //databaseHandler.closeConnection();
 
         //добавление файла
         /*try {

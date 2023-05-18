@@ -19,6 +19,8 @@ import java.util.stream.Stream;
  * Класс отвечающий за работу с коллекциями
  */
 public class CollectionManager {
+    private static CollectionManager instance;
+
 
     // Коллекция, с которой осуществляется работа
     private Hashtable<Integer, Flat> hashtable;
@@ -61,15 +63,18 @@ public class CollectionManager {
         loadCollection();
     }
 
+
     private void loadCollection() {
         try {
             hashtable = databaseCollectionManager.getCollection();
-            UserConsole.printCommandText("Коллекция загружена");
-            App.logger.info("Коллекция загружена");
+            var msg = "Коллекция загружена";
+            UserConsole.printCommandText(msg);
+            App.logger.info(msg);
         } catch (DatabaseHandlingException ex) {
             hashtable = new Hashtable<>();
-            UserConsole.printCommandError("Коллекция не может быть загружена");
-            App.logger.severe("Коллекция не может быть загружена");
+            var msg = "Коллекция не может быть загружена";
+            UserConsole.printCommandText(msg);
+            App.logger.info(msg);
         }
     }
 
@@ -85,7 +90,7 @@ public class CollectionManager {
     /**
      * Метод выводит информацию о коллекции
      */
-    public void info() {
+    public void info() {  //todo переделать возвращаемый тип под стринг
         console.printCommandTextNext("Коллекция: " + hashtable.getClass().getSimpleName());
         console.printCommandTextNext("Тип элементов коллекции: " + Flat.class.getSimpleName());
         String pattern = "yyyy-MM-dd HH:mm:ss.SSS";
@@ -100,7 +105,7 @@ public class CollectionManager {
      * @param key  идентификатор элемента
      * @param flat элемент коллекции, который нужно добавить
      */
-    public void insert(Integer key, Flat flat) {
+    public void insert(Integer key, Flat flat) { //todo User //todo переделать возвращаемый тип под стринг
         if (!hashtable.contains(key)) {
             hashtable.put(key, flat);
             allId.add(flat.getId());
@@ -126,7 +131,7 @@ public class CollectionManager {
      *
      * @param key идентификатор элемента коллекции (ключ)
      */
-    public void removeKey(Integer key) {
+    public void removeKey(Integer key) { //todo User
         Flat flat = hashtable.remove(key);
         allId.remove(flat.getId());
     }
@@ -136,7 +141,7 @@ public class CollectionManager {
      *
      * @param key значение ключа, меньше которого следует удалять элементы
      */
-    public void removeLowerKey(Integer key) {
+    public void removeLowerKey(Integer key) { //todo User //todo переделать возвращаемый тип под стринг
         ArrayList<Integer> keys = new ArrayList<>();
         long count = hashtable.entrySet().stream()
                 .filter(entry -> entry.getKey() < key)
@@ -152,7 +157,7 @@ public class CollectionManager {
      *
      * @param key значение ключа, больше которого следует удалять элементы
      */
-    public void removeGreaterKey(Integer key) {
+    public void removeGreaterKey(Integer key) { //todo User //todo переделать возвращаемый тип под стринг
         ArrayList<Integer> keys = new ArrayList<>();
         long count = hashtable.entrySet().stream()
                 .filter(entry -> entry.getKey() > key)
@@ -165,7 +170,7 @@ public class CollectionManager {
     /**
      * Метод, удаляющий все элементы коллекции
      */
-    public void clear() {
+    public void clear() { //todo User
         hashtable.clear();
         allId.clear();
     }
@@ -175,7 +180,7 @@ public class CollectionManager {
      *
      * @param view выбранный вид элемента коллекции
      */
-    public void removeAllByView(View view) {
+    public void removeAllByView(View view) { //todo User //todo переделать возвращаемый тип под стринг
         ArrayList<Integer> keys = new ArrayList<>();
         long count = hashtable.entrySet().stream()
                 .filter(entry -> {
@@ -204,7 +209,7 @@ public class CollectionManager {
      *
      * @return уникальный id
      */
-    public static int generateId() {
+    public static int generateId() { //todo сделать методами Postgres по заданию
         int id;
         do {
             id = (int) (MAX_ID * Math.random() + 1);
