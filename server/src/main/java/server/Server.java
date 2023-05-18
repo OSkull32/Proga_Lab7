@@ -3,67 +3,178 @@ package server;
 import common.exceptions.ClosingSocketException;
 import common.exceptions.ConnectionErrorException;
 import common.exceptions.OpeningServerSocketException;
-import common.interaction.requests.Request;
 import common.interaction.responses.Response;
-import common.interaction.responses.ResponseCode;
-import server.commands.CommandManager;
-import server.utility.CollectionManager;
-import server.utility.JsonParser;
-import server.utility.RequestHandler;
-import server.utility.ServerFileManager;
+import server.utility.*;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Клас, который запускает сервер
  */
 public class Server {
     private final int port;
-    private int soTimeout;
-    private RequestHandler requestHandler;
-    private CollectionManager collectionManager;
+    private final HandleRequest handleRequest;
+    private final CollectionManager collectionManager;
     private ServerSocket serverSocket;
-    private CommandManager commandManager;
+    private final List<Client> clientsWithRequests = Collections.synchronizedList(new LinkedList<>());
+    private final List<Client> clientsWithResponses = Collections.synchronizedList(new LinkedList<>());
 
-    public Server(int port, int soTimeout, RequestHandler requestHandler, CollectionManager collectionManager) {
+    public Server(int port, HandleRequest handleRequest, CollectionManager collectionManager) {
         this.port = port;
-        this.soTimeout = soTimeout;
-        this.requestHandler = requestHandler;
+        this.handleRequest = handleRequest;
         this.collectionManager = collectionManager;
+
     }
 
-    public Server(int port, CommandManager commandManager) {
-        this.port = port;
-        this.commandManager = commandManager;
-    }
-
-    public void run() {
+    /**
+     * Этот метод играет роль фабрики по "производству" новых клиентов.
+     * Как только клиент подключается, метод добавляет его в (мнимый) пул клиентов, от которых
+     * сервер готов принимать запросы
+     */
+    public void run() { //ПОТОК №1 (метод запускается в единственном потоке)
         try {
             openServerSocket();
-            boolean processingStatus = true;
-            while (processingStatus) {
-                try (Socket clientSocket = connectToClient()) {
-                    processingStatus = processClientRequest(clientSocket);
-                } catch (ConnectionErrorException | SocketTimeoutException ex) {
-                    break;
-                } catch (IOException ex) {
-                    App.logger.severe("Ошибка при попытке завершить соединение с клиентом");
-                }
-            }
-            stop();
         } catch (OpeningServerSocketException ex) {
             App.logger.severe("Сервер не может быть запущен");
+        }
+        while (true) {
+            try {
+                //блокируется до подключения нового клиента
+                Socket clientSocket = connectToClient(); //Появился новый клиент
+                App.logger.info("Соединение с клиентом успешно установлено");
+                new Thread(() -> receiveNewClientAndWaitForRequest(clientSocket)).start(); //Отправляем его ждать в новый поток
+                App.logger.info("Сервер готов к приему новых клиентов");
+
+            } catch (ConnectionErrorException | IOException e) {
+                App.logger.severe("Проблемы с подключением на серверном сокете");
+            }
+        }
+
+    }
+
+    /**
+     * Метод принимает все запросы РОВНО ОТ ОДНОГО КЛИЕНТА. Как только от клиента
+     * приходит запрос, клиент (точнее, его копия) кидается в пул клиентов с запросами
+     *
+     * @param clientSocket сокет клиента, от которого будут приниматься запросы
+     */
+    public void receiveNewClientAndWaitForRequest(Socket clientSocket) { //обрабатывать запросы от одного клиента (вызывается в собственном потоке для кааждого клиента)
+        final Client client;
+        try {
+            client = new Client(clientSocket);
+
+        } catch (IOException e) {
+            App.logger.severe("Ошибка на начальном этапе подключения клиента. Клиент будет отключен");
+            return;
+        }
+        App.logger.info("Новый клиент подключен");
+
+        while (true) {
+            try {
+                client.waitRequest(); //блокируется до получения реквеста
+                clientsWithRequests.add(client.clone());
+                App.logger.info("Получен новый запрос");
+                synchronized (clientsWithRequests) { //может не нужно
+                    clientsWithRequests.notify();
+                }
+
+            } catch (ClassNotFoundException e) {
+                App.logger.warning("Был получен запрос неправильного типа. Прием запросов будет продолжен");
+            } catch (CloneNotSupportedException e) {
+                App.logger.severe("Не удалось добавить клиента в пул реквкстов, так как " +
+                        "он не поддерживает клонирование. Прием запросов будет продолжен");
+            } catch (IOException e) {
+                App.logger.severe("Ошибка в соединении с клиентом. Клиент будет окончательно отключен");
+                client.disconnectClient();
+                break;
+            }
+        }
+    }
+
+    /**
+     * Метод работает с клиентами, у которых уже есть запрос. Он считывает запрос из общей очереди и
+     * отправляет его на обработку в новый поток.
+     */
+    public void processClientRequest() { // ПОТОК № 2
+        while (true) {
+            if (!clientsWithRequests.isEmpty()) {
+                Client clientWithRequest = clientsWithRequests.remove(0);
+                new Thread(() -> {
+                    clientsWithResponses.add(handleRequest.handle(clientWithRequest));
+                    App.logger.info("Запрос был обработан сервером");
+                    synchronized (clientsWithResponses) { //может не нужно
+                        clientsWithResponses.notify();
+                    }
+                }).start();
+
+            } else {
+                synchronized (clientsWithRequests) { //хз насчет этого куска кода
+                    try {
+                        clientsWithRequests.wait();
+                    } catch (InterruptedException e) {
+                        App.logger.warning("Был прерван поток обработки клиентских запросов");
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Метод работает с клиентами, которые уже получили ответ от сервера. Он считывает ответ из общей очереди и
+     * отправляет его клиенту в новом потоке.
+     */
+    public void sendResponses() { // ПОТОК № 3
+        ExecutorService executor = Executors.newCachedThreadPool();
+        while (true) {
+            if (!clientsWithResponses.isEmpty()) { //может быть эта строчка не нужна
+                Client clientWithResponse = clientsWithResponses.remove(0);
+                executor.execute(() -> sendResponseToClient(clientWithResponse));
+
+            } else {
+                synchronized (clientsWithResponses) { //хз насчет этого куска кода
+                    try {
+                        clientsWithResponses.wait();
+                    } catch (InterruptedException e) {
+                        executor.shutdown();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Отправляет ответ переданному клиенту (подразумевается, что у клиента ({@link Client}) уже есть
+     * полученный от сервера ответ, так как в противном случае клиент получит null)
+     *
+     * @param clientWithResponse клиент, которому нужно отправить ответ
+     */
+    public void sendResponseToClient(Client clientWithResponse) {
+        ObjectOutputStream outputStream = clientWithResponse.getClientOutputStream();
+        Response responseToUser = clientWithResponse.getServerResponse();
+        try {
+            outputStream.writeObject(responseToUser);
+            outputStream.flush();
+            App.logger.info("Отправлен ответ на запрос");
+        } catch (IOException e) {
+            App.logger.severe("Не удалось отправить ответ на запрос");
         }
     }
 
     /**
      * Завершает работу сервера
      */
-    private void stop() {
+    public void stop() {
         try {
             App.logger.info("Завершение работы сервера...");
             if (serverSocket == null) throw new ClosingSocketException();
@@ -82,11 +193,9 @@ public class Server {
      * @throws OpeningServerSocketException сокет сервера не может быть открыт
      */
     private void openServerSocket() throws OpeningServerSocketException {
+        App.logger.info("Запуск сервера");
         try {
-            App.logger.info("Запуск сервера");
             serverSocket = new ServerSocket(port);
-            //serverSocket.setSoTimeout(soTimeout);
-            App.logger.info("Сервер успешно запущен");
         } catch (IllegalArgumentException ex) {
             App.logger.severe("Порт '" + port + "' не валидное значение порта");
             throw new OpeningServerSocketException();
@@ -94,6 +203,7 @@ public class Server {
             App.logger.severe("При попытке использовать порт возникла ошибка " + port);
             throw new OpeningServerSocketException();
         }
+        App.logger.info("Сервер успешно запущен");
     }
 
     /**
@@ -104,27 +214,20 @@ public class Server {
      * @throws SocketTimeoutException   Превышено время ожидания подключения
      */
     private Socket connectToClient() throws ConnectionErrorException, SocketTimeoutException {
+        App.logger.info("Попытка соединения с портом '" + port + "'...");
         try {
-            App.logger.info("Попытка соединения с портом '" + port + "'...");
-            Socket clientSocket = serverSocket.accept();
-            clientSocket.setSoTimeout(soTimeout);
-            App.logger.info("Соединение с клиентом успешно установлено");
-            return clientSocket;
+            return serverSocket.accept();
         } catch (SocketTimeoutException ex) {
             App.logger.warning("Превышено время ожидания подключения");
-            throw new SocketTimeoutException();
+            throw ex;
         } catch (IOException ex) {
             App.logger.severe("Произошла ошибка при соединении с клиентом!");
             throw new ConnectionErrorException();
         }
     }
 
-    /**
-     * Процесс получения запроса от клиента
-     *
-     * @param clientSocket сокет клиента
-     * @return получили ли запрос
-     */
+
+    /*
     private boolean processClientRequest(Socket clientSocket) {
         Request userRequest = null;
         Response responseToUser = null;
@@ -151,6 +254,8 @@ public class Server {
         }
         return true;
     }
+
+     */
 
     /**
      * Метод запускает управление сервера через серверную консоль
