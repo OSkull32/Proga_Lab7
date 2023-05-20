@@ -1,6 +1,7 @@
 package server.commands;
 
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 import common.utility.Console;
 import server.utility.CollectionManager;
 
@@ -25,7 +26,7 @@ public class RemoveKey implements Command {
      * Метод, удаляющий элемент коллекции, по значению ключа
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (args.isEmpty()) throw new WrongArgumentException();
         try {
             if (collectionManager.containsKey(Integer.parseInt(args))) {

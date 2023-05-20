@@ -2,6 +2,7 @@ package server.commands;
 
 import common.data.House;
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 import common.utility.Console;
 import server.utility.CollectionManager;
 import server.utility.SortByCoordinates;
@@ -17,17 +18,15 @@ public class FilterLessThanHouse implements Command {
 
     private final Console console;
     private final CollectionManager collectionManager;
-    private final CommandManager commandManager;
 
     /**
      * Конструирует объект, привязывая его к конкретному объекту {@link CollectionManager}.
      *
      * @param collectionManager указывает на объект {@link CollectionManager}.
      */
-    public FilterLessThanHouse(CollectionManager collectionManager, Console console, CommandManager commandManager) {
+    public FilterLessThanHouse(CollectionManager collectionManager, Console console) {
         this.collectionManager = collectionManager;
         this.console = console;
-        this.commandManager = commandManager;
     }
 
     /**
@@ -37,7 +36,7 @@ public class FilterLessThanHouse implements Command {
      * @throws WrongArgumentException при неправильном аргументе.
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         try {
             int year;
@@ -45,12 +44,11 @@ public class FilterLessThanHouse implements Command {
             long numberOfFlatsOnFloor;
             Long numberOfLifts;
 
-            Object obj = commandManager.getCommandObjectArgument();
-            if (obj == null) {
+            if (objectArgument == null) {
                 console.printCommandTextNext("Передан дом == NULL");
                 return;
             }
-            if (obj instanceof House house) { //pattern variable
+            if (objectArgument instanceof House house) { //pattern variable
                 year = house.getYear();
                 numberOfFloors = house.getNumberOfFloors();
                 numberOfFlatsOnFloor = house.getNumberOfFlatsOnFloor();

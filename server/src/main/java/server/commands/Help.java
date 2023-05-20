@@ -1,6 +1,7 @@
 package server.commands;
 
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 
 /**
  * Класс команды "help".
@@ -25,7 +26,7 @@ public class Help implements Command {
      * Выполняет команду "help".
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         commandManager.getCommandsInfo();
     }

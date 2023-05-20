@@ -1,6 +1,7 @@
 package server.commands;
 
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 import server.utility.CollectionManager;
 
 /**
@@ -22,7 +23,7 @@ public class Info implements Command {
      * Метод, исполняющий команду. Выводит описание коллекции HashTable
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         collectionManager.info();
     }

@@ -1,6 +1,7 @@
 package server.commands;
 
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 import common.utility.Console;
 import server.utility.CollectionManager;
 
@@ -27,7 +28,7 @@ public class Clear implements Command {
      * Метод, исполняющий команду. Выводит сообщение о том, что коллекция очищена
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         collectionManager.clear();
         console.printCommandTextNext("Коллекция была очищена");

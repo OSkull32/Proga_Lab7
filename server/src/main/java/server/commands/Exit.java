@@ -1,6 +1,7 @@
 package server.commands;
 
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 import common.utility.Console;
 
 /**
@@ -22,7 +23,7 @@ public class Exit implements Command {
      * Метод, исполняющий команду. Выводит сообщение о завершении работы программы
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         console.printCommandTextNext("Завершение работы программы");
         System.exit(0);

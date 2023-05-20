@@ -2,6 +2,7 @@ package server.commands;
 
 import common.data.Flat;
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 import common.utility.Console;
 import server.utility.CollectionManager;
 
@@ -29,7 +30,7 @@ public class Show implements Command {
      * Метод, исполняющий команду. Выводит содержимое коллекции
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         Hashtable<Integer, Flat> hashtable = collectionManager.getCollection();
         if (hashtable.size() == 0) {

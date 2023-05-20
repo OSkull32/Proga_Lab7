@@ -2,6 +2,7 @@ package server.commands;
 
 import common.data.View;
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 import common.utility.Console;
 import server.utility.CollectionManager;
 
@@ -28,7 +29,7 @@ public class RemoveAllByView implements Command {
      * @param args Строка, содержащая переданные команде аргументы.
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (args.isEmpty()) throw new WrongArgumentException();
         try {
             collectionManager.removeAllByView((args.equals("null") ? null : View.valueOf(args)));

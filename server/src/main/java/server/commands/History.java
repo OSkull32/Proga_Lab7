@@ -1,6 +1,7 @@
 package server.commands;
 
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 
 /**
  * Класс команды "history".
@@ -25,7 +26,7 @@ public class History implements Command {
      * Выполняет команду "history".
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         commandManager.getHistoryList();
     }

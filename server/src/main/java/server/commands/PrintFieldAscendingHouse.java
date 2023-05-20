@@ -1,6 +1,7 @@
 package server.commands;
 
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 import common.utility.Console;
 import server.utility.CollectionManager;
 import server.utility.SortByHouse;
@@ -32,7 +33,7 @@ public class PrintFieldAscendingHouse implements Command {
      * @throws WrongArgumentException если команде был передан аргумент.
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         collectionManager.getCollection().values().stream()
                 .sorted(new SortByHouse())

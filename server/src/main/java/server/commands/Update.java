@@ -4,6 +4,7 @@ import common.data.Flat;
 import common.data.Furnish;
 import common.data.View;
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 import common.utility.Console;
 import server.utility.CollectionManager;
 
@@ -15,17 +16,15 @@ import java.util.Arrays;
 public class Update implements Command {
 
     private final CollectionManager collectionManager;
-    private final CommandManager commandManager;
     private final Console console;
 
     /**
      * @param collectionManager Хранит ссылку на созданный объект CollectionManager.
      * @param console           Хранит ссылку на объект класса Console.
      */
-    public Update(CollectionManager collectionManager, Console console, CommandManager commandManager) {
+    public Update(CollectionManager collectionManager, Console console) {
         this.collectionManager = collectionManager;
         this.console = console;
-        this.commandManager = commandManager;
     }
 
     /**
@@ -33,7 +32,7 @@ public class Update implements Command {
      * пока в качестве аргумента не будет передан stop
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (args.isEmpty()) throw new WrongArgumentException();
 
         try {
@@ -41,8 +40,7 @@ public class Update implements Command {
             int key = collectionManager.getKey(id);
             if (collectionManager.containsKey(key)) {
 
-                Object obj = commandManager.getCommandObjectArgument();
-                if (obj instanceof Flat newFlat) {
+                if (objectArgument instanceof Flat newFlat) {
                     Flat oldFlat = collectionManager.getCollection().get(key);
                     if (newFlat.getName() != null) oldFlat.setName(newFlat.getName());
                     if (newFlat.getCoordinates() != null) oldFlat.setCoordinates(newFlat.getCoordinates());

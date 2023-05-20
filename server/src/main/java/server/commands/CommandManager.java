@@ -17,12 +17,11 @@ import java.util.Set;
  * @version 2.0
  */
 public class CommandManager {
-    private Console console;
+    private final Console console;
     private final HashMap<String, Command> commands = new HashMap<>();
     private final ArrayList<String> historyList = new ArrayList<>();
     private final CollectionManager collectionManager;
     private final int maxHistorySize = 13;
-    private Object commandObjectArgument;
 
     /**
      * Конструирует менеджера команд с заданными {@link Console}
@@ -46,12 +45,12 @@ public class CommandManager {
         addCommand("clear", new Clear(collectionManager, console));
         addCommand("execute_script", new ExecuteScript());
         //addCommand("exit", new Exit(console));
-        addCommand("filter_less_than_house", new FilterLessThanHouse(collectionManager, console, this));
+        addCommand("filter_less_than_house", new FilterLessThanHouse(collectionManager, console));
         addCommand("help", new Help(this));
         addCommand("history", new History(this));
         addCommand("info", new Info(collectionManager));
-        addCommand("update", new Update(collectionManager, console, this));
-        addCommand("insert", new Insert(collectionManager, console, this));
+        addCommand("update", new Update(collectionManager, console));
+        addCommand("insert", new Insert(collectionManager, console));
         addCommand("print_field_ascending_house", new PrintFieldAscendingHouse(collectionManager, console));
         addCommand("remove_all_by_view", new RemoveAllByView(collectionManager, console));
         addCommand("remove_greater_key", new RemoveGreaterKey(collectionManager, console));
@@ -61,9 +60,9 @@ public class CommandManager {
         addCommand("show", new Show(collectionManager, console));
     }
 
-    /**
+    /*
      * При вызове этого метода в консоли запрашивается команда.
-     */
+     *
     public void nextCommand() {
         console.printPreamble(); //print ">"
         String[] inputs = console
@@ -76,55 +75,47 @@ public class CommandManager {
             console.printCommandError(e.getMessage());
         }
     }
+    */
 
+    /*
     public void executeCommand(String command, String args, Object commandObjectArgument, User user) {
-        this.commandObjectArgument = commandObjectArgument;
         try {
             executeCommand(new String[]{command, args, String.valueOf(user)});
         } catch (InvalidCommandException | WrongArgumentException ignored) {
         }
-    }
+    } */
 
-    /**
+    /*
      * Метод сразу передает команду на исполнение
      *
      * @param command название команды
      * @param args    аргументы команды
-     */
+     *
     public void executeCommand(String command, String args, Object commandObjectArgument) {
-        this.commandObjectArgument = commandObjectArgument;
         try {
             executeCommand(new String[]{command, args});
         } catch (InvalidCommandException | WrongArgumentException ignored) {
         }
-    }
+    } */
 
     //метод вызывает команду на исполнение
-    private void executeCommand(String[] inputs) throws InvalidCommandException, WrongArgumentException {
+    public void executeCommand(String commandName, String args, Object objectArgument, User user) throws InvalidCommandException, WrongArgumentException {
 
-        if (inputs[0].equals("")) return;
-        Command command = commands.get(inputs[0]);
+        if (commandName.equals("")) return;
+        Command command = commands.get(commandName);
 
         if (command == null) throw new InvalidCommandException("введена несуществующая команда");
-        if (inputs.length == 1) {
-            command.execute(""); //если не было передано аргументов
+        if (args == null) {
+            command.execute("", objectArgument, user); //если не было передано аргументов
         } else {
-            command.execute(inputs[1]); //если было передано 1 и более аргументов
+            command.execute(args, objectArgument, user); //если было передано 1 и более аргументов
         }
 
-        historyList.add(inputs[0]);
+        historyList.add(commandName);
 
         if (historyList.size() > maxHistorySize) {
             historyList.remove(0);
         }
-    }
-
-    /**
-     * Метод возвращает объект, который был передан в реквесте вместе с командой
-     * (используется командами Insert и Filter_less_then_house)
-     */
-    public Object getCommandObjectArgument() {
-        return commandObjectArgument;
     }
 
     /**
