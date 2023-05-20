@@ -11,7 +11,7 @@ import server.App;
 import server.Server;
 import server.commands.CommandManager;
 
-public class HandleRequest extends Thread {
+public class HandleRequest {
 
     private final CommandManager commandManager;
     private final ServerConsole serverConsole; //todo заменить на возврит стринга из метода
@@ -23,9 +23,18 @@ public class HandleRequest extends Thread {
 
     public Client handle (Client client) {
         Request request = client.getRequest();
-        ResponseCode responseCode = executeCommand(request.getCommandName(), request.getCommandStringArgument(),
-                request.getCommandObjectArgument(), request.getUser());
-        client.setServerResponse(new Response(responseCode, serverConsole.getAndClear()));
+        String answer;
+        ResponseCode responseCode;
+        try {
+             answer = executeCommand(request.getCommandName(), request.getCommandStringArgument(),
+                    request.getCommandObjectArgument(), request.getUser());
+             responseCode = ResponseCode.OK;
+        } catch (InvalidCommandException | WrongArgumentException e) {
+            App.logger.warning("Ошибка " + e.getClass() + " при попытке исполнить команду: " + request.getCommandName());
+            answer = "";
+            responseCode = ResponseCode.ERROR;
+        }
+        client.setServerResponse(new Response(responseCode, answer));
         return client;
     }
 
@@ -37,14 +46,8 @@ public class HandleRequest extends Thread {
      * @param commandObjectArgument Object аргумента команды
      * @return статус исполнения
      */
-    private ResponseCode executeCommand(String command, String commandStringArgument,
-                                        Object commandObjectArgument, User user) {
-        try {
-            commandManager.executeCommand(command, commandStringArgument, commandObjectArgument, user);
-            return ResponseCode.OK;
-        } catch (InvalidCommandException | WrongArgumentException e) {
-            App.logger.warning("Ошибка " + e.getClass() + " при попытке исполнить команду: " + command);
-            return ResponseCode.ERROR;
-        }
+    private String executeCommand(String command, String commandStringArgument, Object commandObjectArgument, User user)
+            throws InvalidCommandException, WrongArgumentException {
+        return commandManager.executeCommand(command, commandStringArgument, commandObjectArgument, user);
     }
 }

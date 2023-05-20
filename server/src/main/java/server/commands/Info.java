@@ -23,9 +23,9 @@ public class Info implements Command {
      * Метод, исполняющий команду. Выводит описание коллекции HashTable
      */
     @Override
-    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
-        collectionManager.info();
+        return collectionManager.info();
     }
 
     /**

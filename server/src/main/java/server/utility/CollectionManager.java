@@ -3,30 +3,23 @@ package server.utility;
 import common.data.Flat;
 import common.data.View;
 import common.exceptions.DatabaseHandlingException;
-import common.exceptions.InvalidValueException;
 import common.utility.Console;
-import common.utility.FlatReader;
 import common.utility.UserConsole;
 import server.App;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Класс отвечающий за работу с коллекциями
  */
 public class CollectionManager {
-    private static CollectionManager instance;
-
 
     // Коллекция, с которой осуществляется работа
     private Hashtable<Integer, Flat> hashtable;
 
     private static final HashSet<Integer> allId = new HashSet<>();
-    private Console console;
     // Время инициализации коллекции
     private LocalDateTime collectionInitialization;
 
@@ -41,11 +34,9 @@ public class CollectionManager {
      * Конструктор, создающий новый объект менеджера коллекции
      */
 
-    public CollectionManager(Hashtable<Integer, Flat> hashtable, Console console) {
+    public CollectionManager(Hashtable<Integer, Flat> hashtable) {
         if (hashtable != null) this.hashtable = hashtable;
         else this.hashtable = new Hashtable<>();
-
-        this.console = console;
 
         for (Flat flat : this.hashtable.values()) {
             allId.add(flat.getId());
@@ -54,9 +45,8 @@ public class CollectionManager {
         collectionInitialization = LocalDateTime.parse(i);
     }
 
-    public CollectionManager(DatabaseCollectionManager databaseCollectionManager, Console console) {
+    public CollectionManager(DatabaseCollectionManager databaseCollectionManager) {
         this.databaseCollectionManager = databaseCollectionManager;
-        this.console = console;
 
         String i = LocalDateTime.now().toString();
         collectionInitialization = LocalDateTime.parse(i);
@@ -90,13 +80,15 @@ public class CollectionManager {
     /**
      * Метод выводит информацию о коллекции
      */
-    public void info() {  //todo переделать возвращаемый тип под стринг
-        console.printCommandTextNext("Коллекция: " + hashtable.getClass().getSimpleName());
-        console.printCommandTextNext("Тип элементов коллекции: " + Flat.class.getSimpleName());
+    public String info() {
+        var builder = new StringBuilder();
+        builder.append("Коллекция: ").append(hashtable.getClass().getSimpleName()).append("\n");
+        builder.append("Тип элементов коллекции: ").append(Flat.class.getSimpleName()).append("\n");
         String pattern = "yyyy-MM-dd HH:mm:ss.SSS";
         DateTimeFormatter europeanDateFormat = DateTimeFormatter.ofPattern(pattern);
-        console.printCommandTextNext("Время инициализации коллекции: " + collectionInitialization.format(europeanDateFormat));
-        console.printCommandTextNext("Количество элементов в коллекции: " + hashtable.size());
+        builder.append("Время инициализации коллекции: ").append(collectionInitialization.format(europeanDateFormat)).append("\n");
+        builder.append("Количество элементов в коллекции: ").append(hashtable.size()).append("\n");
+        return builder.toString();
     }
 
     /**
@@ -105,11 +97,12 @@ public class CollectionManager {
      * @param key  идентификатор элемента
      * @param flat элемент коллекции, который нужно добавить
      */
-    public void insert(Integer key, Flat flat) { //todo User //todo переделать возвращаемый тип под стринг
+    public String insert(Integer key, Flat flat) { //todo User
         if (!hashtable.contains(key)) {
             hashtable.put(key, flat);
             allId.add(flat.getId());
-        } else console.printCommandTextNext("Элемент с данным ключом уже существует");
+            return "Элемент добавлен";
+        } else return "Элемент с данным ключом уже существует";
     }
 
     /**
@@ -141,15 +134,14 @@ public class CollectionManager {
      *
      * @param key значение ключа, меньше которого следует удалять элементы
      */
-    public void removeLowerKey(Integer key) { //todo User //todo переделать возвращаемый тип под стринг
+    public String removeLowerKey(Integer key) { //todo User
         ArrayList<Integer> keys = new ArrayList<>();
         long count = hashtable.entrySet().stream()
                 .filter(entry -> entry.getKey() < key)
                 .peek(entry -> keys.add(entry.getKey()))
                 .count();
         keys.forEach(hashtable::remove);
-        console.printCommandTextNext("Было удалено элементов: " + count);
-
+        return "Было удалено элементов: " + count;
     }
 
     /**
@@ -157,14 +149,14 @@ public class CollectionManager {
      *
      * @param key значение ключа, больше которого следует удалять элементы
      */
-    public void removeGreaterKey(Integer key) { //todo User //todo переделать возвращаемый тип под стринг
+    public String removeGreaterKey(Integer key) { //todo User
         ArrayList<Integer> keys = new ArrayList<>();
         long count = hashtable.entrySet().stream()
                 .filter(entry -> entry.getKey() > key)
                 .peek(entry -> keys.add(entry.getKey()))
                 .count();
         keys.forEach(hashtable::remove);
-        console.printCommandTextNext("Было удалено элементов: " + count);
+        return "Было удалено элементов: " + count;
     }
 
     /**
@@ -180,7 +172,7 @@ public class CollectionManager {
      *
      * @param view выбранный вид элемента коллекции
      */
-    public void removeAllByView(View view) { //todo User //todo переделать возвращаемый тип под стринг
+    public String removeAllByView(View view) { //todo User
         ArrayList<Integer> keys = new ArrayList<>();
         long count = hashtable.entrySet().stream()
                 .filter(entry -> {
@@ -191,7 +183,7 @@ public class CollectionManager {
                 .peek(entry -> keys.add(entry.getKey()))
                 .count();
         keys.forEach(hashtable::remove);
-        console.printCommandTextNext("Было удалено элементов: " + count);
+        return "Было удалено элементов: " + count;
     }
 
     /**

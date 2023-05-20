@@ -45,8 +45,8 @@ public class App {
         DatabaseCollectionManager databaseCollectionManager = new DatabaseCollectionManager(databaseHandler, databaseUserManager);
 
         ServerConsole serverConsole = new ServerConsole();
-        CollectionManager collectionManager = new CollectionManager(databaseCollectionManager, serverConsole);
-        CommandManager commandManager = new CommandManager(serverConsole, collectionManager);
+        CollectionManager collectionManager = new CollectionManager(databaseCollectionManager);
+        CommandManager commandManager = new CommandManager(collectionManager);
 
         //RequestHandler requestHandler = new RequestHandler(commandManager, serverConsole);
         HandleRequest handleRequest = new HandleRequest(commandManager, serverConsole);

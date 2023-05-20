@@ -5,7 +5,6 @@ import common.data.Furnish;
 import common.data.View;
 import common.exceptions.WrongArgumentException;
 import common.interaction.User;
-import common.utility.Console;
 import server.utility.CollectionManager;
 
 import java.util.Arrays;
@@ -16,15 +15,12 @@ import java.util.Arrays;
 public class Update implements Command {
 
     private final CollectionManager collectionManager;
-    private final Console console;
 
     /**
      * @param collectionManager Хранит ссылку на созданный объект CollectionManager.
-     * @param console           Хранит ссылку на объект класса Console.
      */
-    public Update(CollectionManager collectionManager, Console console) {
+    public Update(CollectionManager collectionManager) {
         this.collectionManager = collectionManager;
-        this.console = console;
     }
 
     /**
@@ -32,8 +28,9 @@ public class Update implements Command {
      * пока в качестве аргумента не будет передан stop
      */
     @Override
-    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (args.isEmpty()) throw new WrongArgumentException();
+        var builder = new StringBuilder();
 
         try {
             int id = Integer.parseInt(args);
@@ -51,18 +48,19 @@ public class Update implements Command {
                     if (newFlat.getView() != null) oldFlat.setView(newFlat.getView());
                     if (newFlat.getHouse() != null) oldFlat.setHouse(newFlat.getHouse());
 
-                    console.printCommandTextNext("Элемент обновлен");
+                    builder.append("Элемент обновлен").append("\n");
                 } else {
                     throw new WrongArgumentException("Переданный объект не соответствует типу Flat");
                 }
             } else {
-                console.printCommandError("Элемента с данным id не существует в коллекции");
+                builder.append("Элемента с данным id не существует в коллекции").append("\n");
             }
         } catch (IndexOutOfBoundsException ex) {
-            console.printCommandError("Не указаны все аргументы команды");
+            builder.append("Не указаны все аргументы команды").append("\n");
         } catch (NumberFormatException ex) {
-            console.printCommandError("Формат аргумента не соответствует" + ex.getMessage());
+            builder.append("Формат аргумента не соответствует").append(ex.getMessage()).append("\n");
         }
+        return builder.toString();
     }
 
     //Метод, возвращающий названия всех полей коллекции, которые могут быть изменены

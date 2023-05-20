@@ -2,7 +2,6 @@ package server.commands;
 
 import common.exceptions.WrongArgumentException;
 import common.interaction.User;
-import common.utility.Console;
 import server.utility.CollectionManager;
 
 /**
@@ -10,32 +9,31 @@ import server.utility.CollectionManager;
  */
 public class RemoveGreaterKey implements Command {
     private final CollectionManager collectionManager;
-    private final Console console;
 
     /**
      * Конструктор класса.
      *
      * @param collectionManager Хранит ссылку на объект CollectionManager.
      */
-    public RemoveGreaterKey(CollectionManager collectionManager, Console console) {
+    public RemoveGreaterKey(CollectionManager collectionManager) {
         this.collectionManager = collectionManager;
-        this.console = console;
     }
 
     /**
      * Метод, удаляющий все элементы коллекции, значения id которых больше заданного ключа
      */
     @Override
-    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (args.isEmpty()) throw new WrongArgumentException();
+        var builder = new StringBuilder();
         try {
-            collectionManager.removeGreaterKey(Integer.parseInt(args));
-            console.printCommandTextNext("Элементы коллекции были удалены.");
+            builder.append(collectionManager.removeGreaterKey(Integer.parseInt(args))).append("\n");
         } catch (IndexOutOfBoundsException ex) {
-            console.printCommandError("Не указан аргумент команды");
+            builder.append("Ошибка: Не указан аргумент команды").append("\n");
         } catch (NumberFormatException ex) {
-            console.printCommandError("Формат аргумента не соответствует целочисленному " + ex.getMessage());
+            builder.append("Ошибка: Формат аргумента не соответствует целочисленному ").append(ex.getMessage()).append("\n");
         }
+        return builder.toString();
     }
 
     /**

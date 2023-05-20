@@ -26,9 +26,9 @@ public class History implements Command {
      * Выполняет команду "history".
      */
     @Override
-    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
-        commandManager.getHistoryList();
+        return commandManager.getHistoryList();
     }
 
     /**

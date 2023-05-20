@@ -3,7 +3,6 @@ package server.commands;
 import common.data.House;
 import common.exceptions.WrongArgumentException;
 import common.interaction.User;
-import common.utility.Console;
 import server.utility.CollectionManager;
 import server.utility.SortByCoordinates;
 
@@ -16,7 +15,6 @@ import server.utility.SortByCoordinates;
 
 public class FilterLessThanHouse implements Command {
 
-    private final Console console;
     private final CollectionManager collectionManager;
 
     /**
@@ -24,9 +22,8 @@ public class FilterLessThanHouse implements Command {
      *
      * @param collectionManager указывает на объект {@link CollectionManager}.
      */
-    public FilterLessThanHouse(CollectionManager collectionManager, Console console) {
+    public FilterLessThanHouse(CollectionManager collectionManager) {
         this.collectionManager = collectionManager;
-        this.console = console;
     }
 
     /**
@@ -36,8 +33,9 @@ public class FilterLessThanHouse implements Command {
      * @throws WrongArgumentException при неправильном аргументе.
      */
     @Override
-    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
+        var builder = new StringBuilder();
         try {
             int year;
             Long numberOfFloors;
@@ -45,8 +43,7 @@ public class FilterLessThanHouse implements Command {
             Long numberOfLifts;
 
             if (objectArgument == null) {
-                console.printCommandTextNext("Передан дом == NULL");
-                return;
+                return "Передан дом == NULL";
             }
             if (objectArgument instanceof House house) { //pattern variable
                 year = house.getYear();
@@ -64,13 +61,14 @@ public class FilterLessThanHouse implements Command {
                             && flat.getHouse().getNumberOfLifts() != null && numberOfLifts != null && flat.getHouse().getNumberOfLifts() < numberOfLifts
                     )
                     .sorted(new SortByCoordinates())
-                    .forEach(flat -> console.printCommandTextNext("Квартира: " + flat.getName() + "; "));
+                    .forEach(flat -> builder.append("Квартира: ").append(flat.getName()).append(";\n"));
 
         } catch (NumberFormatException e) {
             throw new WrongArgumentException("Аргумент должен быть числом.");
         } catch (ArrayIndexOutOfBoundsException ex) {
-            console.printCommandError("Не указаны аргументы команды, необходимо ввести 4 аргумента через пробел");
+            builder.append("Ошибка: Не указаны аргументы команды, необходимо ввести 4 аргумента через пробел").append("\n");
         }
+        return builder.toString();
     }
 
     /**

@@ -14,7 +14,7 @@ public interface Command {
      * @throws WrongArgumentException если аргумент был введен некорректно / требовался,
      *                                но не был введен или не требовался, но был введен.
      */
-    void execute(String args, Object objectArgument, User user) throws WrongArgumentException;
+    String execute(String args, Object objectArgument, User user) throws WrongArgumentException;
 
     /**
      * Метод, описывающий работу команды

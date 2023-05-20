@@ -33,10 +33,11 @@ public class Save implements Command {
      * Метод, сохраняющий коллекцию в указанном файле
      */
     @Override
-    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         fileManager.writeToFile(JsonParser.encode(collectionManager.getCollection()));
         console.printCommandTextNext("Коллекция была сохранена.");
+        return "";
     }
 
     /**

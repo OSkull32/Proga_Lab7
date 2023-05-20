@@ -6,8 +6,8 @@ import common.interaction.User;
 public class ExecuteScript implements Command{
 
     @Override
-    public void execute(String args, Object objectArgument, User user) throws WrongArgumentException {
-
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
+        return "";
     }
 
     @Override
