@@ -1,22 +1,26 @@
 package server.commands;
 
 import common.data.Flat;
+import common.exceptions.DatabaseHandlingException;
 import common.exceptions.WrongArgumentException;
 import common.interaction.User;
 import server.utility.CollectionManager;
+import server.utility.DatabaseCollectionManager;
 
 /**
  * Класс команды, которая добавляет элемент в коллекцию с заданным ключом
  */
 public class Insert implements Command {
     private final CollectionManager collectionManager;
+    private DatabaseCollectionManager databaseCollectionManager;
 
     /**
      * Конструктор класса.
      *
      * @param collectionManager Хранит ссылку на объект CollectionManager.
      */
-    public Insert(CollectionManager collectionManager) {
+    public Insert(CollectionManager collectionManager, DatabaseCollectionManager databaseCollectionManager) {
+        this.databaseCollectionManager = databaseCollectionManager;
         this.collectionManager = collectionManager;
     }
 
@@ -33,8 +37,7 @@ public class Insert implements Command {
 
                 if (objectArgument instanceof Flat flat) {
                     flat.setId(CollectionManager.generateId()); //устанавливается id
-                    builder.append(collectionManager.insert(Integer.parseInt(args), flat)).append("\n");
-                    builder.append("Элемент добавлен в коллекцию").append("\n");
+                    builder.append(collectionManager.insert(Integer.parseInt(args), databaseCollectionManager.insertFlat(flat,user))).append("\n");
                 } else {
                     throw new WrongArgumentException("Переданный объект не соответствует типу Flat");
                 }
@@ -44,6 +47,8 @@ public class Insert implements Command {
         } catch (IndexOutOfBoundsException ex) {
             builder.append("Ошибка: Не указаны аргументы команды.").append("\n");
         } catch (NumberFormatException ignored) {
+        } catch (DatabaseHandlingException ex) {
+            builder.append("Произошла ошибка при обращении к базе данных!");
         }
         return builder.toString();
     }
