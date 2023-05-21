@@ -267,6 +267,107 @@ public class DatabaseCollectionManager {
         }
     }
 
+    private void updateFlatById(int flatId, Flat flat) throws DatabaseHandlingException {
+        PreparedStatement preparedUpdateFlatNameStatement = null;
+        PreparedStatement preparedUpdateFlatAreaStatement = null;
+        PreparedStatement preparedUpdateFlatNumberOfRoomsStatement = null;
+        PreparedStatement preparedUpdateFlatNumberOfBathroomsStatement = null;
+        PreparedStatement preparedUpdateFlatFurnishStatement = null;
+        PreparedStatement preparedUpdateFlatViewStatement = null;
+        PreparedStatement preparedUpdateCoordinatesStatement = null;
+        PreparedStatement preparedUpdateHouseStatement = null;
+        try {
+            databaseHandler.setCommitMode();
+            databaseHandler.setSavepoint();
+
+            preparedUpdateFlatNameStatement = databaseHandler.getPreparedStatement(UPDATE_FLAT_NAME_BY_ID, false);
+            preparedUpdateFlatAreaStatement = databaseHandler.getPreparedStatement(UPDATE_FLAT_AREA_BY_ID, false);
+            preparedUpdateFlatNumberOfRoomsStatement = databaseHandler.getPreparedStatement(UPDATE_FLAT_NUMBER_OF_ROOMS_BY_ID, false);
+            preparedUpdateFlatNumberOfBathroomsStatement = databaseHandler.getPreparedStatement(UPDATE_FLAT_NUMBER_OF_BATHROOMS_BY_ID,false);
+            preparedUpdateFlatFurnishStatement = databaseHandler.getPreparedStatement(UPDATE_FLAT_FURNISH_BY_ID,false);
+            preparedUpdateFlatViewStatement = databaseHandler.getPreparedStatement(UPDATE_FLAT_VIEW_BY_ID,false);
+            preparedUpdateCoordinatesStatement = databaseHandler.getPreparedStatement(UPDATE_COORDINATES_BY_FLAT_ID,false);
+            preparedUpdateHouseStatement = databaseHandler.getPreparedStatement(UPDATE_HOUSE_BY_ID,false);
+
+            if (flat.getName() != null) {
+                preparedUpdateFlatNameStatement.setString(1, flat.getName());
+                preparedUpdateFlatNameStatement.setInt(2, flatId);
+                if (preparedUpdateFlatNameStatement.executeUpdate() == 0) throw new SQLException();
+                App.logger.info("Выполнен запрос UPDATE_FLAT_NAME_BY_ID");
+            }
+
+            if (flat.getCoordinates() != null) {
+                preparedUpdateCoordinatesStatement.setInt(1, flat.getCoordinates().getX());
+                preparedUpdateCoordinatesStatement.setInt(2, flat.getCoordinates().getY());
+                preparedUpdateCoordinatesStatement.setInt(3, flatId);
+                if (preparedUpdateCoordinatesStatement.executeUpdate() == 0) throw new SQLException();
+                App.logger.info("Выполнен запрос UPDATE_COORDINATES_BY_FLAT_ID");
+            }
+
+            if (flat.getArea() != -1) {
+                preparedUpdateFlatAreaStatement.setInt(1, flat.getArea());
+                preparedUpdateFlatAreaStatement.setInt(2, flatId);
+                if (preparedUpdateFlatAreaStatement.executeUpdate() == 0) throw new SQLException();
+                App.logger.info("Выполнен запрос UPDATE_FLAT_AREA_BY_ID");
+            }
+
+            if (flat.getNumberOfRooms() != -1) {
+                preparedUpdateFlatNumberOfRoomsStatement.setLong(1, flat.getNumberOfRooms());
+                preparedUpdateFlatNumberOfRoomsStatement.setLong(2, flatId);
+                if (preparedUpdateFlatNumberOfRoomsStatement.executeUpdate() == 0) throw new SQLException();
+                App.logger.info("Выполнен запрос UPDATE_FLAT_NUMBER_OF_ROOMS_BY_ID");
+            }
+
+            if (flat.getNumberOfBathrooms() != -1) {
+                preparedUpdateFlatNumberOfBathroomsStatement.setLong(1, flat.getNumberOfBathrooms());
+                preparedUpdateFlatNumberOfBathroomsStatement.setLong(2, flatId);
+                if (preparedUpdateFlatNumberOfBathroomsStatement.executeUpdate() == 0) throw new SQLException();
+                App.logger.info("Выполнен запрос UPDATE_FLAT_NUMBER_OF_BATHROOMS_BY_ID");
+            }
+
+            if (flat.getFurnish() != null) {
+                preparedUpdateFlatFurnishStatement.setString(1, flat.getFurnish().toString());
+                preparedUpdateFlatFurnishStatement.setLong(2, flatId);
+                if (preparedUpdateFlatFurnishStatement.executeUpdate() == 0) throw new SQLException();
+                App.logger.info("Выполнен запрос UPDATE_FLAT_FURNISH_BY_ID");
+            }
+
+            if (flat.getView() != null) {
+                preparedUpdateFlatViewStatement.setString(1, flat.getView().toString());
+                preparedUpdateFlatViewStatement.setLong(2, flatId);
+                if (preparedUpdateFlatViewStatement.executeUpdate() == 0) throw new SQLException();
+                App.logger.info("Выполнен запрос UPDATE_FLAT_VIEW_BY_ID");
+            }
+
+            if (flat.getHouse() != null) {
+                preparedUpdateHouseStatement.setString(1, flat.getHouse().getName());
+                preparedUpdateHouseStatement.setInt(2, flat.getHouse().getYear());
+                preparedUpdateHouseStatement.setLong(3, flat.getHouse().getNumberOfFloors());
+                preparedUpdateHouseStatement.setLong(4, flat.getHouse().getNumberOfFlatsOnFloor());
+                preparedUpdateHouseStatement.setLong(5, flat.getHouse().getNumberOfLifts());
+                preparedUpdateHouseStatement.setLong(6, flatId);
+                if (preparedUpdateHouseStatement.executeUpdate() == 0) throw new SQLException();
+                App.logger.info("Выполнен запрос UPDATE_HOUSE_BY_ID");
+            }
+
+            databaseHandler.commit();
+        } catch (SQLException ex) {
+            App.logger.severe("Произошла ошибка при выполнении группы запросов на обновление объекта");
+            databaseHandler.rollback();
+            throw new DatabaseHandlingException();
+        } finally {
+            databaseHandler.closePreparedStatement(preparedUpdateFlatNameStatement);
+            databaseHandler.closePreparedStatement(preparedUpdateFlatAreaStatement);
+            databaseHandler.closePreparedStatement(preparedUpdateFlatNumberOfRoomsStatement);
+            databaseHandler.closePreparedStatement(preparedUpdateFlatNumberOfBathroomsStatement);
+            databaseHandler.closePreparedStatement(preparedUpdateFlatFurnishStatement);
+            databaseHandler.closePreparedStatement(preparedUpdateFlatViewStatement);
+            databaseHandler.closePreparedStatement(preparedUpdateCoordinatesStatement);
+            databaseHandler.closePreparedStatement(preparedUpdateHouseStatement);
+            databaseHandler.setNormalMode();
+        }
+    }
+
     public void deleteFlatById(int flatId) throws DatabaseHandlingException {
         PreparedStatement preparedDeleteStatement = null;
         try {
