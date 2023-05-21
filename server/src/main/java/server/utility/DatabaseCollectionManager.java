@@ -36,7 +36,7 @@ public class DatabaseCollectionManager {
             " WHERE " + DatabaseHandler.FLAT_TABLE_ID_COLUMN + " = ?";
     private final String UPDATE_FLAT_NAME_BY_ID = "UPDATE " + DatabaseHandler.FLAT_TABLE + " SET " +
             DatabaseHandler.FLAT_TABLE_NAME_COLUMN + " = ?" + " WHERE " +
-            DatabaseHandler.FLAT_TABLE_ID_COLUMN;
+            DatabaseHandler.FLAT_TABLE_ID_COLUMN + " = ?";
     private final String UPDATE_FLAT_BY_ID = "UPDATE " + DatabaseHandler.FLAT_TABLE + " SET " +
             DatabaseHandler.FLAT_TABLE_NAME_COLUMN + " = ?" + " WHERE " +
             DatabaseHandler.FLAT_TABLE_ID_COLUMN + " = ?";
@@ -267,7 +267,7 @@ public class DatabaseCollectionManager {
         }
     }
 
-    private void updateFlatById(int flatId, Flat flat) throws DatabaseHandlingException {
+    public void updateFlatById(int flatId, Flat flat) throws DatabaseHandlingException {
         PreparedStatement preparedUpdateFlatNameStatement = null;
         PreparedStatement preparedUpdateFlatAreaStatement = null;
         PreparedStatement preparedUpdateFlatNumberOfRoomsStatement = null;

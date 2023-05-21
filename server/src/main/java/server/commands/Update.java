@@ -3,9 +3,13 @@ package server.commands;
 import common.data.Flat;
 import common.data.Furnish;
 import common.data.View;
+import common.exceptions.DatabaseHandlingException;
+import common.exceptions.ManualDatabaseEditException;
+import common.exceptions.PermissionDeniedException;
 import common.exceptions.WrongArgumentException;
 import common.interaction.User;
 import server.utility.CollectionManager;
+import server.utility.DatabaseCollectionManager;
 
 import java.util.Arrays;
 
@@ -13,13 +17,14 @@ import java.util.Arrays;
  * Класс команды, которая обновляет значение элемента коллекции с выбранным id
  */
 public class Update implements Command {
-
+    private DatabaseCollectionManager databaseCollectionManager;
     private final CollectionManager collectionManager;
 
     /**
      * @param collectionManager Хранит ссылку на созданный объект CollectionManager.
      */
-    public Update(CollectionManager collectionManager) {
+    public Update(CollectionManager collectionManager, DatabaseCollectionManager databaseCollectionManager) {
+        this.databaseCollectionManager = databaseCollectionManager;
         this.collectionManager = collectionManager;
     }
 
@@ -39,6 +44,11 @@ public class Update implements Command {
 
                 if (objectArgument instanceof Flat newFlat) {
                     Flat oldFlat = collectionManager.getCollection().get(key);
+                    if (!oldFlat.getOwner().equals(user)) throw new PermissionDeniedException();
+                    if (!databaseCollectionManager.checkFlatUserId(oldFlat.getId(), user)) throw new ManualDatabaseEditException();
+
+                    databaseCollectionManager.updateFlatById(id, newFlat);
+
                     if (newFlat.getName() != null) oldFlat.setName(newFlat.getName());
                     if (newFlat.getCoordinates() != null) oldFlat.setCoordinates(newFlat.getCoordinates());
                     if (newFlat.getArea() != -1) oldFlat.setArea(newFlat.getArea());
@@ -59,6 +69,13 @@ public class Update implements Command {
             builder.append("Не указаны все аргументы команды").append("\n");
         } catch (NumberFormatException ex) {
             builder.append("Формат аргумента не соответствует").append(ex.getMessage()).append("\n");
+        } catch (PermissionDeniedException ex) {
+            builder.append("Недостаточно прав для выполнения команды").append("\n");
+            builder.append("Объекты, принадлежащие другим пользователям нельзя изменять").append("\n");
+        } catch (DatabaseHandlingException ex) {
+            builder.append("Произошла ошибка при обращении к БД").append("\n");
+        } catch (ManualDatabaseEditException ex) {
+            builder.append("Произошло изменение базы данных вручную, для избежания ошибок перезагрузите клиент").append("\n");
         }
         return builder.toString();
     }

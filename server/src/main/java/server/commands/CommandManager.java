@@ -52,7 +52,7 @@ public class CommandManager {
         addCommand("help", new Help(this));
         addCommand("history", new History(this));
         addCommand("info", new Info(collectionManager));
-        addCommand("update", new Update(collectionManager));
+        addCommand("update", new Update(collectionManager, databaseCollectionManager));
         addCommand("insert", new Insert(collectionManager, databaseCollectionManager));
         addCommand("print_field_ascending_house", new PrintFieldAscendingHouse(collectionManager));
         addCommand("remove_all_by_view", new RemoveAllByView(collectionManager));
