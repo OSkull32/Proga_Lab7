@@ -30,8 +30,8 @@ public class DatabaseCollectionManager {
             DatabaseHandler.FLAT_TABLE_FURNISH_COLUMN + ", " +
             DatabaseHandler.FLAT_TABLE_VIEW_COLUMN + ", " +
             DatabaseHandler.FLAT_TABLE_HOUSE_ID_COLUMN + ", " +
-            DatabaseHandler.FLAT_TABLE_USER_ID_COLUMN + ") VALUES (?, ?, ?, ?, ?, ?::furnish," +
-            "?::view, ?, ?)";
+            DatabaseHandler.FLAT_TABLE_USER_ID_COLUMN + ") VALUES (?, ?, ?, ?, ?, ?," +
+            "?, ?, ?)";
     private final String DELETE_FLAT_BY_ID = "DELETE FROM " + DatabaseHandler.FLAT_TABLE +
             " WHERE " + DatabaseHandler.FLAT_TABLE_ID_COLUMN + " = ?";
     private final String UPDATE_FLAT_NAME_BY_ID = "UPDATE " + DatabaseHandler.FLAT_TABLE + " SET " +
@@ -198,7 +198,7 @@ public class DatabaseCollectionManager {
         return house;
     }
 
-    private Flat insertFlat(Flat flat, User user) throws DatabaseHandlingException {
+    public Flat insertFlat(Flat flat, User user) throws DatabaseHandlingException {
         Flat flat1;
         PreparedStatement preparedInsertFlatStatement = null;
         PreparedStatement preparedInsertCoordinatesStatement = null;
@@ -209,9 +209,9 @@ public class DatabaseCollectionManager {
 
             LocalDateTime creationTime = LocalDateTime.now();
 
-            preparedInsertFlatStatement = databaseHandler.getPreparedStatement(INSERT_FLAT, false);
-            preparedInsertCoordinatesStatement = databaseHandler.getPreparedStatement(INSERT_COORDINATES, false);
-            preparedInsertHouseStatement = databaseHandler.getPreparedStatement(INSERT_HOUSE, false);
+            preparedInsertFlatStatement = databaseHandler.getPreparedStatement(INSERT_FLAT, true);
+            preparedInsertCoordinatesStatement = databaseHandler.getPreparedStatement(INSERT_COORDINATES, true);
+            preparedInsertHouseStatement = databaseHandler.getPreparedStatement(INSERT_HOUSE, true);
 
             preparedInsertHouseStatement.setString(1, flat.getHouse().getName());
             preparedInsertHouseStatement.setInt(2, flat.getHouse().getYear());

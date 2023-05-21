@@ -5,6 +5,7 @@ import common.exceptions.WrongArgumentException;
 import common.interaction.User;
 import common.utility.Console;
 import server.utility.CollectionManager;
+import server.utility.DatabaseCollectionManager;
 import server.utility.DatabaseUserManager;
 
 import java.util.ArrayList;
@@ -24,12 +25,14 @@ public class CommandManager {
     private final CollectionManager collectionManager;
     private final int maxHistorySize = 13;
     private DatabaseUserManager databaseUserManager;
+    private DatabaseCollectionManager databaseCollectionManager;
 
     /**
      * Конструирует менеджера команд с заданными {@link Console}
      *
      */
-    public CommandManager(CollectionManager collectionManager, DatabaseUserManager databaseUserManager) {
+    public CommandManager(CollectionManager collectionManager, DatabaseUserManager databaseUserManager, DatabaseCollectionManager databaseCollectionManager) {
+        this.databaseCollectionManager = databaseCollectionManager;
         this.databaseUserManager = databaseUserManager;
         this.collectionManager = collectionManager;
         putAllCommands();
@@ -50,7 +53,7 @@ public class CommandManager {
         addCommand("history", new History(this));
         addCommand("info", new Info(collectionManager));
         addCommand("update", new Update(collectionManager));
-        addCommand("insert", new Insert(collectionManager));
+        addCommand("insert", new Insert(collectionManager, databaseCollectionManager));
         addCommand("print_field_ascending_house", new PrintFieldAscendingHouse(collectionManager));
         addCommand("remove_all_by_view", new RemoveAllByView(collectionManager));
         addCommand("remove_greater_key", new RemoveGreaterKey(collectionManager));
