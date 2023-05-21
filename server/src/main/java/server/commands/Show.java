@@ -2,7 +2,7 @@ package server.commands;
 
 import common.data.Flat;
 import common.exceptions.WrongArgumentException;
-import common.utility.Console;
+import common.interaction.User;
 import server.utility.CollectionManager;
 
 import java.util.Hashtable;
@@ -13,30 +13,30 @@ import java.util.Hashtable;
 public class Show implements Command {
 
     private final CollectionManager collectionManager;
-    private final Console console;
 
     /**
      * Конструктор класса
      *
      * @param collectionManager хранит ссылку на объект CollectionManager
      */
-    public Show(CollectionManager collectionManager, Console console) {
+    public Show(CollectionManager collectionManager) {
         this.collectionManager = collectionManager;
-        this.console = console;
     }
 
     /**
      * Метод, исполняющий команду. Выводит содержимое коллекции
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         Hashtable<Integer, Flat> hashtable = collectionManager.getCollection();
+        var builder = new StringBuilder();
         if (hashtable.size() == 0) {
-            console.printCommandTextNext("Коллекция пуста.");
+            builder.append("Коллекция пуста");
         } else {
-            hashtable.forEach((key, flat) -> console.printCommandTextNext("\nЭлемент: " + key + "\n" + flat.toString()));
+            hashtable.forEach((key, flat) -> builder.append("\nЭлемент: ").append(key).append("\n").append(flat.toString()).append("\n"));
         }
+        return builder.toString();
     }
 
     /**

@@ -1,6 +1,7 @@
 package server.commands;
 
 import common.exceptions.WrongArgumentException;
+import common.interaction.User;
 import common.utility.Console;
 import common.utility.FileManager;
 import server.utility.CollectionManager;
@@ -32,10 +33,11 @@ public class Save implements Command {
      * Метод, сохраняющий коллекцию в указанном файле
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         fileManager.writeToFile(JsonParser.encode(collectionManager.getCollection()));
         console.printCommandTextNext("Коллекция была сохранена.");
+        return "";
     }
 
     /**

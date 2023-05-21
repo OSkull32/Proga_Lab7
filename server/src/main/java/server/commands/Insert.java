@@ -2,7 +2,7 @@ package server.commands;
 
 import common.data.Flat;
 import common.exceptions.WrongArgumentException;
-import common.utility.Console;
+import common.interaction.User;
 import server.utility.CollectionManager;
 
 /**
@@ -10,19 +10,14 @@ import server.utility.CollectionManager;
  */
 public class Insert implements Command {
     private final CollectionManager collectionManager;
-    private final Console console;
-    private final CommandManager commandManager;
 
     /**
      * Конструктор класса.
      *
      * @param collectionManager Хранит ссылку на объект CollectionManager.
-     * @param console           Хранит ссылку на объект класса Console.
      */
-    public Insert(CollectionManager collectionManager, Console console, CommandManager commandManager) {
+    public Insert(CollectionManager collectionManager) {
         this.collectionManager = collectionManager;
-        this.console = console;
-        this.commandManager = commandManager;
     }
 
     /**
@@ -30,26 +25,27 @@ public class Insert implements Command {
      * При успешном выполнении команды в потоке вывода высветится уведомление о добавлении элемента в коллекцию.
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (args.isEmpty()) throw new WrongArgumentException();
+        var builder = new StringBuilder();
         try {
             if (!collectionManager.containsKey(Integer.parseInt(args))) {
 
-                Object obj = commandManager.getCommandObjectArgument();
-                if (obj instanceof Flat flat) {
+                if (objectArgument instanceof Flat flat) {
                     flat.setId(CollectionManager.generateId()); //устанавливается id
-                    collectionManager.insert(Integer.parseInt(args), flat);
-                    console.printCommandTextNext("Элемент добавлен в коллекцию");
+                    builder.append(collectionManager.insert(Integer.parseInt(args), flat)).append("\n");
+                    builder.append("Элемент добавлен в коллекцию").append("\n");
                 } else {
                     throw new WrongArgumentException("Переданный объект не соответствует типу Flat");
                 }
             } else {
-                console.printCommandError("Элемент с данным ключом уже существует в коллекции");
+                builder.append("Ошибка: Элемент с данным ключом уже существует в коллекции").append("\n");
             }
         } catch (IndexOutOfBoundsException ex) {
-            console.printCommandError("Не указаны аргументы команды.");
-        } catch (NumberFormatException ex) {
+            builder.append("Ошибка: Не указаны аргументы команды.").append("\n");
+        } catch (NumberFormatException ignored) {
         }
+        return builder.toString();
     }
 
     /**

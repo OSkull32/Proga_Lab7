@@ -1,7 +1,7 @@
 package server.commands;
 
 import common.exceptions.WrongArgumentException;
-import common.utility.Console;
+import common.interaction.User;
 import server.utility.CollectionManager;
 
 /**
@@ -9,34 +9,34 @@ import server.utility.CollectionManager;
  */
 public class RemoveKey implements Command {
     private final CollectionManager collectionManager;
-    private final Console console;
 
     /**
      * Конструктор класса.
      *
      * @param collectionManager Хранит ссылку на объект CollectionManager.
      */
-    public RemoveKey(CollectionManager collectionManager, Console console) {
+    public RemoveKey(CollectionManager collectionManager) {
         this.collectionManager = collectionManager;
-        this.console = console;
     }
 
     /**
      * Метод, удаляющий элемент коллекции, по значению ключа
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (args.isEmpty()) throw new WrongArgumentException();
+        var builder = new StringBuilder();
         try {
             if (collectionManager.containsKey(Integer.parseInt(args))) {
                 collectionManager.removeKey(Integer.parseInt(args));
-                console.printCommandTextNext("Элемент коллекции был удален.");
-            } else console.printCommandTextNext("Данного элемента коллекции не существует");
+                builder.append("Элемент коллекции был удален.").append("\n");
+            } else builder.append("Данного элемента коллекции не существует").append("\n");
         } catch (IndexOutOfBoundsException ex) {
-            console.printCommandError("Не указаны аргументы команды");
+            builder.append("Не указаны аргументы команды").append("\n");
         } catch (NumberFormatException ex) {
-            console.printCommandError("Формат аргумента не соответствует целочисленному " + ex.getMessage());
+            builder.append("Формат аргумента не соответствует целочисленному ").append(ex.getMessage()).append("\n");
         }
+        return builder.toString();
     }
 
     /**

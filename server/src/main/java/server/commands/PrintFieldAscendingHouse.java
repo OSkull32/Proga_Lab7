@@ -1,7 +1,7 @@
 package server.commands;
 
 import common.exceptions.WrongArgumentException;
-import common.utility.Console;
+import common.interaction.User;
 import server.utility.CollectionManager;
 import server.utility.SortByHouse;
 
@@ -13,16 +13,14 @@ import server.utility.SortByHouse;
  */
 public class PrintFieldAscendingHouse implements Command {
     private final CollectionManager collectionManager;
-    private final Console console;
 
     /**
      * Конструирует объект, привязывая его к конкретному объекту {@link CollectionManager}.
      *
      * @param collectionManager указывает на объект {@link CollectionManager}
      */
-    public PrintFieldAscendingHouse(CollectionManager collectionManager, Console console) {
+    public PrintFieldAscendingHouse(CollectionManager collectionManager) {
         this.collectionManager = collectionManager;
-        this.console = console;
     }
 
     /**
@@ -32,14 +30,16 @@ public class PrintFieldAscendingHouse implements Command {
      * @throws WrongArgumentException если команде был передан аргумент.
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
+        var builder = new StringBuilder();
         collectionManager.getCollection().values().stream()
                 .sorted(new SortByHouse())
                 .forEach(flat -> {
                     String houseName = flat.getHouse() == null ? "null" : flat.getHouse().getName();
-                    console.printCommandTextNext("Квартира: " + flat.getName() + " в доме " + houseName);
+                    builder.append("Квартира: ").append(flat.getName()).append(" в доме ").append(houseName).append("\n");
                 });
+        return builder.toString();
     }
 
     /**

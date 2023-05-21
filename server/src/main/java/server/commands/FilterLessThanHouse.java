@@ -2,7 +2,7 @@ package server.commands;
 
 import common.data.House;
 import common.exceptions.WrongArgumentException;
-import common.utility.Console;
+import common.interaction.User;
 import server.utility.CollectionManager;
 import server.utility.SortByCoordinates;
 
@@ -15,19 +15,15 @@ import server.utility.SortByCoordinates;
 
 public class FilterLessThanHouse implements Command {
 
-    private final Console console;
     private final CollectionManager collectionManager;
-    private final CommandManager commandManager;
 
     /**
      * Конструирует объект, привязывая его к конкретному объекту {@link CollectionManager}.
      *
      * @param collectionManager указывает на объект {@link CollectionManager}.
      */
-    public FilterLessThanHouse(CollectionManager collectionManager, Console console, CommandManager commandManager) {
+    public FilterLessThanHouse(CollectionManager collectionManager) {
         this.collectionManager = collectionManager;
-        this.console = console;
-        this.commandManager = commandManager;
     }
 
     /**
@@ -37,20 +33,19 @@ public class FilterLessThanHouse implements Command {
      * @throws WrongArgumentException при неправильном аргументе.
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
+        var builder = new StringBuilder();
         try {
             int year;
             Long numberOfFloors;
             long numberOfFlatsOnFloor;
             Long numberOfLifts;
 
-            Object obj = commandManager.getCommandObjectArgument();
-            if (obj == null) {
-                console.printCommandTextNext("Передан дом == NULL");
-                return;
+            if (objectArgument == null) {
+                return "Передан дом == NULL";
             }
-            if (obj instanceof House house) { //pattern variable
+            if (objectArgument instanceof House house) { //pattern variable
                 year = house.getYear();
                 numberOfFloors = house.getNumberOfFloors();
                 numberOfFlatsOnFloor = house.getNumberOfFlatsOnFloor();
@@ -66,13 +61,14 @@ public class FilterLessThanHouse implements Command {
                             && flat.getHouse().getNumberOfLifts() != null && numberOfLifts != null && flat.getHouse().getNumberOfLifts() < numberOfLifts
                     )
                     .sorted(new SortByCoordinates())
-                    .forEach(flat -> console.printCommandTextNext("Квартира: " + flat.getName() + "; "));
+                    .forEach(flat -> builder.append("Квартира: ").append(flat.getName()).append(";\n"));
 
         } catch (NumberFormatException e) {
             throw new WrongArgumentException("Аргумент должен быть числом.");
         } catch (ArrayIndexOutOfBoundsException ex) {
-            console.printCommandError("Не указаны аргументы команды, необходимо ввести 4 аргумента через пробел");
+            builder.append("Ошибка: Не указаны аргументы команды, необходимо ввести 4 аргумента через пробел").append("\n");
         }
+        return builder.toString();
     }
 
     /**

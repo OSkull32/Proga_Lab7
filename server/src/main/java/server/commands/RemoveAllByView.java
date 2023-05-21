@@ -2,7 +2,7 @@ package server.commands;
 
 import common.data.View;
 import common.exceptions.WrongArgumentException;
-import common.utility.Console;
+import common.interaction.User;
 import server.utility.CollectionManager;
 
 /**
@@ -10,16 +10,14 @@ import server.utility.CollectionManager;
  */
 public class RemoveAllByView implements Command {
     private final CollectionManager collectionManager;
-    private final Console console;
 
     /**
      * Конструктор класса.
      *
      * @param collectionManager Хранит ссылку на объект CollectionManager.
      */
-    public RemoveAllByView(CollectionManager collectionManager, Console console) {
+    public RemoveAllByView(CollectionManager collectionManager) {
         this.collectionManager = collectionManager;
-        this.console = console;
     }
 
     /**
@@ -28,19 +26,21 @@ public class RemoveAllByView implements Command {
      * @param args Строка, содержащая переданные команде аргументы.
      */
     @Override
-    public void execute(String args) throws WrongArgumentException {
+    public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (args.isEmpty()) throw new WrongArgumentException();
+        var builder = new StringBuilder();
         try {
-            collectionManager.removeAllByView((args.equals("null") ? null : View.valueOf(args)));
+            builder.append(collectionManager.removeAllByView((args.equals("null") ? null : View.valueOf(args)))).append("\n");
         } catch (IllegalArgumentException ex) {
-            console.printCommandError("Выбранной константы нет в перечислении.");
-            console.printCommandTextNext("Список всех констант:");
+            builder.append("Ошибка: Выбранной константы нет в перечислении.").append("\n");
+            builder.append("Список всех констант:").append("\n");
             for (View view : View.values()) {
-                console.printCommandTextNext(view.toString());
+                builder.append(view.toString());
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            console.printCommandError("Не указаны аргументы команды.");
+            builder.append("Ошибка: Не указаны аргументы команды.").append("\n");
         }
+        return builder.toString();
     }
 
     /**
