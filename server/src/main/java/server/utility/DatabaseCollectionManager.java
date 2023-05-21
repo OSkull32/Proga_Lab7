@@ -116,12 +116,12 @@ public class DatabaseCollectionManager {
     public Hashtable<Integer, Flat> getCollection() throws DatabaseHandlingException {
         Hashtable<Integer, Flat> flatList = new Hashtable<>();
         PreparedStatement preparedSelectAllStatement = null;
-        PreparedStatement preparedStatement = null;
         try {
             preparedSelectAllStatement = databaseHandler.getPreparedStatement(SELECT_ALL_FLAT, false);
             ResultSet resultSet = preparedSelectAllStatement.executeQuery();
             while (resultSet.next()) {
-                flatList.put(1, createFlat(resultSet));
+                int key = resultSet.getInt(DatabaseHandler.FLAT_TABLE_ID_COLUMN);
+                flatList.put(key, createFlat(resultSet));
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
