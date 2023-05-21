@@ -193,6 +193,10 @@ public class Flat implements Comparable<Flat>, Serializable {
         return id;
     }
 
+    public User getOwner() {
+        return owner;
+    }
+
     public void setId(int id) {
         this.id = id;
     }
