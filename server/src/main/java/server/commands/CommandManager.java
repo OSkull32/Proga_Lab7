@@ -5,6 +5,7 @@ import common.exceptions.WrongArgumentException;
 import common.interaction.User;
 import common.utility.Console;
 import server.utility.CollectionManager;
+import server.utility.DatabaseUserManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,14 +23,14 @@ public class CommandManager {
     private final ArrayList<String> historyList = new ArrayList<>();
     private final CollectionManager collectionManager;
     private final int maxHistorySize = 13;
+    private DatabaseUserManager databaseUserManager;
 
     /**
      * Конструирует менеджера команд с заданными {@link Console}
      *
-     * @param console Объект {@link Console}, через который класс
-     *                осуществляет взаимодействие с пользователем.
      */
-    public CommandManager(CollectionManager collectionManager) {
+    public CommandManager(CollectionManager collectionManager, DatabaseUserManager databaseUserManager) {
+        this.databaseUserManager = databaseUserManager;
         this.collectionManager = collectionManager;
         putAllCommands();
     }
@@ -57,6 +58,8 @@ public class CommandManager {
         addCommand("remove_lower_key", new RemoveLowerKey(collectionManager));
         //addCommand("save", new Save(collectionManager, console, fileManager));
         addCommand("show", new Show(collectionManager));
+        addCommand("register", new Register(databaseUserManager));
+        addCommand("login", new Login(databaseUserManager));
     }
 
     /*
