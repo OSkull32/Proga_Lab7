@@ -16,11 +16,16 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 
 /**
  * Клас, который запускает сервер
  */
 public class Server {
+
+    private static final int MAX_CLIENTS_CONNECTED_AT_THE_SAME_TIME = 20;
+
     private final int port;
     private final HandleRequest handleRequest;
     private final CollectionManager collectionManager;
@@ -40,25 +45,32 @@ public class Server {
      * Как только клиент подключается, метод добавляет его в (мнимый) пул клиентов, от которых
      * сервер готов принимать запросы
      */
-    public void run() { //ПОТОК №1 (метод запускается в единственном потоке)
+    public void run() { //ПОТОК №1 (метод запускается в единственном потоке) (теперь даже необязательно в потоке так как он сразу кончается)
         try {
             openServerSocket();
         } catch (OpeningServerSocketException ex) {
             App.logger.severe("Сервер не может быть запущен");
         }
-        while (true) {
+        ForkJoinPool forkJoinPool = new ForkJoinPool(MAX_CLIENTS_CONNECTED_AT_THE_SAME_TIME);
+        RecursiveAction recursiveAction = new RecursiveClientReceiver();
+        forkJoinPool.execute(recursiveAction);
+    }
+
+    //это что, внутренний класс?
+    private class RecursiveClientReceiver extends RecursiveAction {
+        @Override
+        protected void compute() {
+            App.logger.info("Сервер готов к приему новых клиентов " + Thread.currentThread().getName());
             try {
                 //блокируется до подключения нового клиента
                 Socket clientSocket = connectToClient(); //Появился новый клиент
-                App.logger.info("Соединение с клиентом успешно установлено");
-                new Thread(() -> receiveNewClientAndWaitForRequest(clientSocket)).start(); //Отправляем его ждать в новый поток
-                App.logger.info("Сервер готов к приему новых клиентов");
-
+                RecursiveAction nextClient = new RecursiveClientReceiver();
+                nextClient.fork(); //в новом потоке ждем новых клиентов
+                receiveNewClientAndWaitForRequest(clientSocket); //в этом потоке слушаем запросы от этого клиента
             } catch (ConnectionErrorException | IOException e) {
                 App.logger.severe("Проблемы с подключением на серверном сокете");
             }
         }
-
     }
 
     /**
