@@ -68,6 +68,8 @@ public class DatabaseCollectionManager {
             DatabaseHandler.COORDINATES_TABLE_X_COLUMN + " = ?" +
             DatabaseHandler.COORDINATES_TABLE_Y_COLUMN + " = ?" + " WHERE " +
             DatabaseHandler.COORDINATES_TABLE_FLAT_ID_COLUMN + " = ?";
+    private final String DELETE_COORDINATES_BY_FLAT_ID = "DELETE FROM " + DatabaseHandler.COORDINATES_TABLE +
+            " WHERE " + DatabaseHandler.COORDINATES_TABLE_FLAT_ID_COLUMN + " = ?";
 
     private final String SELECT_ALL_HOUSE = "SELECT * FROM " + DatabaseHandler.HOUSE_TABLE;
     private final String SELECT_HOUSE_BY_ID = SELECT_ALL_HOUSE + " WHERE " +
@@ -89,8 +91,8 @@ public class DatabaseCollectionManager {
     private final String DELETE_HOUSE_BY_ID = "DELETE FROM " + DatabaseHandler.HOUSE_TABLE +
             " WHERE " + DatabaseHandler.HOUSE_TABLE_ID_COLUMN + " = ?";
 
-    private DatabaseHandler databaseHandler;
-    private DatabaseUserManager databaseUserManager;
+    private final DatabaseHandler databaseHandler;
+    private final DatabaseUserManager databaseUserManager;
 
     public DatabaseCollectionManager(DatabaseHandler databaseHandler, DatabaseUserManager databaseUserManager) {
         this.databaseHandler = databaseHandler;
@@ -369,16 +371,35 @@ public class DatabaseCollectionManager {
     }
 
     public void deleteFlatById(int flatId) throws DatabaseHandlingException {
-        PreparedStatement preparedDeleteStatement = null;
+        PreparedStatement preparedDeleteHouseStatement = null;
+        PreparedStatement preparedDeleteFlatStatement = null;
+        PreparedStatement preparedDeleteCoordinatesStatement = null;
         try {
-            preparedDeleteStatement = databaseHandler.getPreparedStatement(DELETE_HOUSE_BY_ID, false);
-            preparedDeleteStatement.setInt(1, getHouseIdByFlatId(flatId));
+            preparedDeleteCoordinatesStatement = databaseHandler.getPreparedStatement(DELETE_COORDINATES_BY_FLAT_ID, false);
+            preparedDeleteFlatStatement = databaseHandler.getPreparedStatement(DELETE_FLAT_BY_ID, false);
+            preparedDeleteHouseStatement = databaseHandler.getPreparedStatement(DELETE_HOUSE_BY_ID, false);
+
+            preparedDeleteCoordinatesStatement.setInt(1, flatId);
+            preparedDeleteFlatStatement.setInt(1, flatId);
+            preparedDeleteHouseStatement.setInt(1, getHouseIdByFlatId(flatId));
+
+            if (preparedDeleteCoordinatesStatement.executeUpdate() == 0) throw new SQLException();
+            App.logger.info("Выполнен запрос DELETE_COORDINATES_BY_FLAT_ID");
+
+            if (preparedDeleteFlatStatement.executeUpdate() == 0) throw new SQLException();
+            App.logger.info("Выполнен запрос DELETE_FLAT_BY_ID");
+
+            if (preparedDeleteHouseStatement.executeUpdate() == 0) throw new SQLException();
             App.logger.info("Выполнен запрос DELETE_HOUSE_BY_ID");
         } catch (SQLException ex) {
+            ex.printStackTrace();
             App.logger.severe("Произошла ошибка при выполнении запроса DELETE_HOUSE_BY_ID");
+            databaseHandler.rollback();
             throw new DatabaseHandlingException();
         } finally {
-            databaseHandler.closePreparedStatement(preparedDeleteStatement);
+            databaseHandler.closePreparedStatement(preparedDeleteHouseStatement);
+            databaseHandler.closePreparedStatement(preparedDeleteCoordinatesStatement);
+            databaseHandler.closePreparedStatement(preparedDeleteFlatStatement);
         }
     }
 
