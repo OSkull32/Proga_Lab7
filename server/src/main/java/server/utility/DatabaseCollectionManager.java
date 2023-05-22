@@ -13,6 +13,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.Map;
 
 public class DatabaseCollectionManager {
     private final String SELECT_ALL_FLAT = "SELECT * FROM " + DatabaseHandler.FLAT_TABLE;
@@ -422,8 +423,11 @@ public class DatabaseCollectionManager {
 
     public void clearCollection() throws DatabaseHandlingException {
         Hashtable<Integer, Flat> flatList = getCollection();
-        ArrayList<Integer> keys = new ArrayList<>();
-        keys.forEach(flatList::remove);
+        for (Map.Entry<Integer, Flat> entry : flatList.entrySet()) {
+            Flat flat = getCollection().get(entry.getKey());
+            deleteFlatById(flat.getId());
+        }
     }
+
 
 }

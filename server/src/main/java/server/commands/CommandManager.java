@@ -45,7 +45,7 @@ public class CommandManager {
 
     // метод добавляет все команды в список
     private void putAllCommands() {
-        addCommand("clear", new Clear(collectionManager));
+        addCommand("clear", new Clear(collectionManager, databaseCollectionManager));
         addCommand("execute_script", new ExecuteScript());
         //addCommand("exit", new Exit(console));
         addCommand("filter_less_than_house", new FilterLessThanHouse(collectionManager));
