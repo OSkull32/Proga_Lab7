@@ -39,23 +39,24 @@ public class Clear implements Command {
     public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         var builder = new StringBuilder();
+        int size = 0;
         try {
             ArrayList<Integer> keys = new ArrayList<>();
             for (Map.Entry<Integer, Flat> entry : collectionManager.getCollection().entrySet()) {
-                 Flat flat = collectionManager.getCollection().get(entry.getKey());
-                if (!flat.getOwner().equals(user)) throw new PermissionDeniedException();
-                if (!databaseCollectionManager.checkFlatUserId(flat.getId(), user)) throw new ManualDatabaseEditException();
+                keys.add(entry.getKey());
             }
-            databaseCollectionManager.clearCollection();
-            collectionManager.clear();
-            builder.append("Коллекция была очищена").append("\n");
-        } catch (PermissionDeniedException ex) {
-            builder.append("Недостаточно прав для выполнения команды").append("\n");
-            builder.append("Объекты, принадлежащие другим пользователям нельзя изменять").append("\n");
+            for (Integer k : keys) {
+                Flat flat = collectionManager.getCollection().get(k);
+                if (databaseCollectionManager.checkFlatUserId(flat.getId(), user) && flat.getOwner().equals(user)) {
+                    databaseCollectionManager.deleteFlatById(flat.getId());
+                    collectionManager.removeKey(k);
+                    size += 1;
+                }
+            }
+            if (size == 0) builder.append("Вы не можете очистить коллекцию, так как в ней нет ваших элементов").append("\n");
+            else builder.append("Все принадлежащие вам элементы коллекции очищены").append("\n");
         } catch (DatabaseHandlingException ex) {
             builder.append("Произошла ошибка при обращении к БД").append("\n");
-        } catch (ManualDatabaseEditException ex) {
-            builder.append("Произошло изменение базы данных вручную, для избежания ошибок перезагрузите клиент").append("\n");
         }
         return builder.toString();
     }
