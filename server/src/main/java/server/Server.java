@@ -10,14 +10,8 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.RecursiveAction;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Клас, который запускает сервер
@@ -30,8 +24,8 @@ public class Server {
     private final HandleRequest handleRequest;
     private final CollectionManager collectionManager;
     private ServerSocket serverSocket;
-    private final List<Client> clientsWithRequests = Collections.synchronizedList(new LinkedList<>());
-    private final List<Client> clientsWithResponses = Collections.synchronizedList(new LinkedList<>());
+    private final BlockingQueue<Client> clientsWithRequests = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Client> clientsWithResponses = new LinkedBlockingQueue<>();
 
     public Server(int port, HandleRequest handleRequest, CollectionManager collectionManager) {
         this.port = port;
@@ -45,7 +39,7 @@ public class Server {
      * Как только клиент подключается, метод добавляет его в (мнимый) пул клиентов, от которых
      * сервер готов принимать запросы
      */
-    public void run() { //ПОТОК №1 (метод запускается в единственном потоке) (теперь даже необязательно в потоке так как он сразу кончается)
+    public void run() { //(не)ПОТОК №1 (метод запускается в единственном потоке) (теперь даже необязательно в потоке так как он сразу кончается)
         try {
             openServerSocket();
         } catch (OpeningServerSocketException ex) {
@@ -93,11 +87,8 @@ public class Server {
         while (true) {
             try {
                 client.waitRequest(); //блокируется до получения реквеста
-                clientsWithRequests.add(client.clone());
+                clientsWithRequests.put(client.clone());
                 App.logger.info("Получен новый запрос");
-                synchronized (clientsWithRequests) { //может не нужно
-                    clientsWithRequests.notify();
-                }
 
             } catch (ClassNotFoundException e) {
                 App.logger.warning("Был получен запрос неправильного типа. Прием запросов будет продолжен");
@@ -108,6 +99,8 @@ public class Server {
                 App.logger.severe("Ошибка в соединении с клиентом. Клиент будет окончательно отключен");
                 client.disconnectClient();
                 break;
+            } catch (InterruptedException e) {
+                App.logger.warning("Был прерван поток чтения клиентских запросов");
             }
         }
     }
@@ -118,25 +111,19 @@ public class Server {
      */
     public void processClientRequest() { // ПОТОК № 2
         while (true) {
-            if (!clientsWithRequests.isEmpty()) {
-                Client clientWithRequest = clientsWithRequests.remove(0);
+            try {
+                Client clientWithRequest = clientsWithRequests.take();
                 new Thread(() -> {
-                    clientsWithResponses.add(handleRequest.handle(clientWithRequest));
-                    App.logger.info("Запрос был обработан сервером");
-                    synchronized (clientsWithResponses) { //может не нужно
-                        clientsWithResponses.notify();
+                    try {
+                        clientsWithResponses.put(handleRequest.handle(clientWithRequest));
+                        App.logger.info("Запрос был обработан сервером");
+                    } catch (InterruptedException e) {
+                        App.logger.warning("Была прервана обработка запроса от клиента");
                     }
                 }).start();
-
-            } else {
-                synchronized (clientsWithRequests) { //хз насчет этого куска кода
-                    try {
-                        clientsWithRequests.wait();
-                    } catch (InterruptedException e) {
-                        App.logger.warning("Был прерван поток обработки клиентских запросов");
-                        break;
-                    }
-                }
+            } catch (InterruptedException e) {
+                App.logger.warning("Был прерван поток обработки клиентских запросов");
+                break;
             }
         }
     }
@@ -148,19 +135,13 @@ public class Server {
     public void sendResponses() { // ПОТОК № 3
         ExecutorService executor = Executors.newCachedThreadPool();
         while (true) {
-            if (!clientsWithResponses.isEmpty()) { //может быть эта строчка не нужна
-                Client clientWithResponse = clientsWithResponses.remove(0);
+            try {
+                Client clientWithResponse = clientsWithResponses.take();
                 executor.execute(() -> sendResponseToClient(clientWithResponse));
-
-            } else {
-                synchronized (clientsWithResponses) { //хз насчет этого куска кода
-                    try {
-                        clientsWithResponses.wait();
-                    } catch (InterruptedException e) {
-                        executor.shutdown();
-                        break;
-                    }
-                }
+            } catch (InterruptedException e) {
+                App.logger.warning("Был прерван поток отправки ответов клиентам");
+                executor.shutdown();
+                break;
             }
         }
     }
