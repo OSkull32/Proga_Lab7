@@ -57,7 +57,7 @@ public class CommandManager {
         addCommand("print_field_ascending_house", new PrintFieldAscendingHouse(collectionManager));
         addCommand("remove_all_by_view", new RemoveAllByView(collectionManager));
         addCommand("remove_greater_key", new RemoveGreaterKey(collectionManager));
-        addCommand("remove_key", new RemoveKey(collectionManager));
+        addCommand("remove_key", new RemoveKey(collectionManager, databaseCollectionManager));
         addCommand("remove_lower_key", new RemoveLowerKey(collectionManager));
         //addCommand("save", new Save(collectionManager, console, fileManager));
         addCommand("show", new Show(collectionManager));
