@@ -277,7 +277,6 @@ public class Server {
                     } catch (IOException e) {
                         //
                     }
-
                     System.out.println("Выхожу");
                     System.exit(0);
                 }
