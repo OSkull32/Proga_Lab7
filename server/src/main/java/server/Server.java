@@ -1,5 +1,6 @@
 package server;
 
+import com.sun.jdi.event.ThreadStartEvent;
 import common.exceptions.ClosingSocketException;
 import common.exceptions.ConnectionErrorException;
 import common.exceptions.OpeningServerSocketException;
@@ -24,6 +25,7 @@ public class Server {
     private final HandleRequest handleRequest;
     private final CollectionManager collectionManager;
     private ServerSocket serverSocket;
+    private final ForkJoinPool forkJoinPool = new ForkJoinPool(MAX_CLIENTS_CONNECTED_AT_THE_SAME_TIME);
     private final BlockingQueue<Client> clientsWithRequests = new LinkedBlockingQueue<>();
     private final BlockingQueue<Client> clientsWithResponses = new LinkedBlockingQueue<>();
 
@@ -45,7 +47,6 @@ public class Server {
         } catch (OpeningServerSocketException ex) {
             App.logger.severe("Сервер не может быть запущен");
         }
-        ForkJoinPool forkJoinPool = new ForkJoinPool(MAX_CLIENTS_CONNECTED_AT_THE_SAME_TIME);
         RecursiveAction recursiveAction = new RecursiveClientReceiver();
         forkJoinPool.execute(recursiveAction);
     }
@@ -62,7 +63,11 @@ public class Server {
                 nextClient.fork(); //в новом потоке ждем новых клиентов
                 receiveNewClientAndWaitForRequest(clientSocket); //в этом потоке слушаем запросы от этого клиента
             } catch (ConnectionErrorException | IOException e) {
-                App.logger.severe("Проблемы с подключением на серверном сокете");
+                if (serverSocket.isClosed()) {
+                    App.logger.info("Закрыт серверный сокет");
+                } else {
+                    App.logger.severe("Проблемы с подключением на серверном сокете");
+                }
             }
         }
     }
@@ -190,7 +195,7 @@ public class Server {
         try {
             serverSocket = new ServerSocket(port);
         } catch (IllegalArgumentException ex) {
-            App.logger.severe("Порт '" + port + "' не валидное значение порта");
+            App.logger.severe("Порт '" + port + "' невалидное значение порта");
             throw new OpeningServerSocketException();
         } catch (IOException ex) {
             App.logger.severe("При попытке использовать порт возникла ошибка " + port);
@@ -214,7 +219,6 @@ public class Server {
             App.logger.warning("Превышено время ожидания подключения");
             throw ex;
         } catch (IOException ex) {
-            App.logger.severe("Произошла ошибка при соединении с клиентом!");
             throw new ConnectionErrorException();
         }
     }
@@ -253,31 +257,28 @@ public class Server {
     /**
      * Метод запускает управление сервера через серверную консоль
      */
-    public void controlServer(Thread threadToControl) {
+    public void controlServer(Thread ... threadsToControl) {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             String command = scanner.nextLine();
-            if (!threadToControl.isAlive()) {
-                break;
-            }
             switch (command) {
-                case "save" -> {
-                    try {
-                        ServerFileManager.writeToFile(App.FILE_PATH, JsonParser.encode(collectionManager.getCollection()));
-                        System.out.println("Коллекция сохранена");
-                    } catch (IOException e) {
-                        System.out.println("Ошибка при сохранении коллекции");
-                    }
-                }
                 case "exit" -> {
-                    try { //закрытие сокета
-                        if (!serverSocket.isClosed()) {
-                            serverSocket.close();
-                        }
-                    } catch (IOException e) {
-                        //
-                    }
                     System.out.println("Выхожу");
+
+                    forkJoinPool.shutdown();
+
+                    for (Thread t : threadsToControl) {
+                        t.interrupt();
+                    }
+
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ignore) {}
+
+                    try { //закрытие сокета
+                        serverSocket.close();
+                    } catch (IOException ignore) {}
+
                     System.exit(0);
                 }
                 default -> {

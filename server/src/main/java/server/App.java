@@ -54,9 +54,15 @@ public class App {
         Server server = new Server(port, handleRequest, collectionManager);
 
 
-        new Thread(server::sendResponses).start();
-        new Thread(server::processClientRequest).start();
+        Thread t1 = new Thread(server::sendResponses);
+        t1.start();
+        Thread t2 = new Thread(server::processClientRequest);
+        t2.start();
         server.run();
+
+        Thread controllingServerThread = new Thread(() -> server.controlServer(t1, t2));
+        //controllingServerThread.setDaemon(true);
+        controllingServerThread.start();
 
 
         //databaseHandler.closeConnection();
@@ -94,8 +100,7 @@ public class App {
         Server server = new Server(PORT, CONNECTION_TIMEOUT, requestHandler, collectionManager);
 
         Thread mainThread = Thread.currentThread();
-        Thread controllingServerThread = new Thread(() -> server.controlServer(mainThread));
-        controllingServerThread.start();
+
 
         server.run();*/
     }
@@ -150,6 +155,8 @@ public class App {
             return false;
         }
     }
+
+
 
 
     /*private static Hashtable<Integer, Flat> getHashtableFromFile() throws Exception {
