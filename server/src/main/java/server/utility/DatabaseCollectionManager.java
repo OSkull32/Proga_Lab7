@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Map;
 
+import static java.sql.JDBCType.NULL;
+
 public class DatabaseCollectionManager {
     private final String SELECT_ALL_FLAT = "SELECT * FROM " + DatabaseHandler.FLAT_TABLE;
     private final String SELECT_FLAT_ID = SELECT_ALL_FLAT + " WHERE " +
@@ -108,9 +110,15 @@ public class DatabaseCollectionManager {
         long numberOfRooms = resultSet.getLong(DatabaseHandler.FLAT_TABLE_NUMBER_OF_ROOMS_COLUMN);
         long numberOfBathrooms = resultSet.getLong(DatabaseHandler.FLAT_TABLE_NUMBER_OF_BATHROOMS_COLUMN);
         Furnish furnish = Furnish.valueOf(resultSet.getString(DatabaseHandler.FLAT_TABLE_FURNISH_COLUMN));
-        View view = View.valueOf(resultSet.getString(DatabaseHandler.FLAT_TABLE_VIEW_COLUMN));
+        View view = null;
+        if (resultSet.getString(DatabaseHandler.FLAT_TABLE_VIEW_COLUMN) != null) {
+            view = View.valueOf(resultSet.getString(DatabaseHandler.FLAT_TABLE_VIEW_COLUMN));
+        }
         Coordinates coordinates = getCoordinatesByFlatId(id);
-        House house = getHouseById(resultSet.getInt(DatabaseHandler.FLAT_TABLE_HOUSE_ID_COLUMN));
+        House house = null;
+        if (resultSet.getObject(DatabaseHandler.FLAT_TABLE_HOUSE_ID_COLUMN) != null) {
+            house = getHouseById(resultSet.getInt(DatabaseHandler.FLAT_TABLE_HOUSE_ID_COLUMN));
+        }
         User owner = databaseUserManager.getUserById(resultSet.getLong(DatabaseHandler.FLAT_TABLE_USER_ID_COLUMN));
         return new Flat(id, name, coordinates, creationDate, area, numberOfRooms, numberOfBathrooms,
                 furnish, view, house, owner);
@@ -216,27 +224,29 @@ public class DatabaseCollectionManager {
             preparedInsertCoordinatesStatement = databaseHandler.getPreparedStatement(INSERT_COORDINATES, true);
             preparedInsertHouseStatement = databaseHandler.getPreparedStatement(INSERT_HOUSE, true);
 
-            preparedInsertHouseStatement.setString(1, flat.getHouse().getName());
-            preparedInsertHouseStatement.setInt(2, flat.getHouse().getYear());
-            preparedInsertHouseStatement.setLong(3, flat.getHouse().getNumberOfFloors());
-            preparedInsertHouseStatement.setLong(4, flat.getHouse().getNumberOfFlatsOnFloor());
-            preparedInsertHouseStatement.setLong(5, flat.getHouse().getNumberOfLifts());
-            if (preparedInsertHouseStatement.executeUpdate() == 0) throw new SQLException();
-            ResultSet generateHouseKeys = preparedInsertHouseStatement.getGeneratedKeys();
-            int houseId;
-            if (generateHouseKeys.next()) {
-                houseId = generateHouseKeys.getInt(1);
-            } else throw new SQLException();
-            App.logger.info("Выполнен запрос INSERT_HOUSE");
-
+            int houseId = 0;
+            if (flat.getHouse() != null) {
+                preparedInsertHouseStatement.setString(1, flat.getHouse().getName());
+                preparedInsertHouseStatement.setInt(2, flat.getHouse().getYear());
+                preparedInsertHouseStatement.setLong(3, flat.getHouse().getNumberOfFloors());
+                preparedInsertHouseStatement.setLong(4, flat.getHouse().getNumberOfFlatsOnFloor());
+                preparedInsertHouseStatement.setLong(5, flat.getHouse().getNumberOfLifts());
+                if (preparedInsertHouseStatement.executeUpdate() == 0) throw new SQLException();
+                ResultSet generateHouseKeys = preparedInsertHouseStatement.getGeneratedKeys();
+                if (generateHouseKeys.next()) {
+                    houseId = generateHouseKeys.getInt(1);
+                } else throw new SQLException();
+                App.logger.info("Выполнен запрос INSERT_HOUSE");
+            }
+            
             preparedInsertFlatStatement.setString(1, flat.getName());
             preparedInsertFlatStatement.setTimestamp(2, Timestamp.valueOf(creationTime));
             preparedInsertFlatStatement.setInt(3, flat.getArea());
             preparedInsertFlatStatement.setLong(4, flat.getNumberOfRooms());
             preparedInsertFlatStatement.setLong(5, flat.getNumberOfBathrooms());
             preparedInsertFlatStatement.setString(6, flat.getFurnish().toString());
-            preparedInsertFlatStatement.setString(7, flat.getView().toString());
-            preparedInsertFlatStatement.setInt(8, houseId);
+            preparedInsertFlatStatement.setString(7, flat.getView() == null ? null : flat.getView().toString());
+            preparedInsertFlatStatement.setObject(8, flat.getHouse() == null ? null : houseId);
             preparedInsertFlatStatement.setLong(9, databaseUserManager.getUserIdByUsername(user));
             if (preparedInsertFlatStatement.executeUpdate() == 0) throw new SQLException();
             ResultSet generateFlatKeys = preparedInsertFlatStatement.getGeneratedKeys();
@@ -259,6 +269,7 @@ public class DatabaseCollectionManager {
             databaseHandler.commit();
             return flat1;
         } catch (SQLException ex) {
+            ex.printStackTrace();
             App.logger.severe("Произошла ошибка при выполнении группы запросов на добавление нового объекта");
             databaseHandler.rollback();
             throw new DatabaseHandlingException();
@@ -390,7 +401,6 @@ public class DatabaseCollectionManager {
             if (preparedDeleteFlatStatement.executeUpdate() == 0) throw new SQLException();
             App.logger.info("Выполнен запрос DELETE_FLAT_BY_ID");
 
-            if (preparedDeleteHouseStatement.executeUpdate() == 0) throw new SQLException();
             App.logger.info("Выполнен запрос DELETE_HOUSE_BY_ID");
         } catch (SQLException ex) {
             ex.printStackTrace();
