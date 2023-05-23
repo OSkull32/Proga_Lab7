@@ -15,6 +15,7 @@ import common.utility.UserConsole;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.Stack;
@@ -27,6 +28,8 @@ public class UserHandler {
     private Scanner userScanner;
     private final Stack<File> scriptStack = new Stack<>();
     private final Stack<Scanner> scannerStack = new Stack<>();
+    private final ArrayList<String> history = new ArrayList<>();
+    private static final int MAX_HISTORY_SIZE = 13;
 
     public UserHandler(Scanner userConsole) {
         this.userScanner = userConsole;
@@ -79,6 +82,7 @@ public class UserHandler {
                 }
                 processingCode = processCommand(userCommand[0], userCommand[1]);
             } while (processingCode == ProcessingCode.ERROR && !fileMode() || userCommand[0].isEmpty());
+            addToHistory(userCommand[0]);
             try {
                 if (fileMode() && (serverResponseCode == ResponseCode.ERROR || processingCode == ProcessingCode.ERROR))
                     throw new ErrorInScriptException();
@@ -138,7 +142,7 @@ public class UserHandler {
                 case "" -> {
                     return ProcessingCode.ERROR;
                 }
-                case "help", "info", "show", "clear", "exit", "history", "server_exit" -> {
+                case "info", "show", "clear", "exit", "help", "server_exit" -> {
                     if (!commandArgument.isEmpty()) throw new CommandUsageException();
                 }
                 case "insert" -> {
@@ -166,6 +170,12 @@ public class UserHandler {
                 case "print_field_ascending_house" -> {
                     if (!commandArgument.isEmpty()) throw new CommandUsageException("<House>");
                 }
+                case "history" -> {
+                    UserConsole.printCommandTextNext("Последние " + history.size() + " команд(ы): " +
+                            history.toString().replace("[", "").replace("]", ""));
+                    addToHistory(command);
+                    return ProcessingCode.ERROR;
+                }
                 default -> {
                     UserConsole.printCommandTextNext("Команда '" + command + "' не найдена. Наберите 'help' для справки.");
                     return ProcessingCode.ERROR;
@@ -179,6 +189,11 @@ public class UserHandler {
             UserConsole.printCommandError("Формат аргумента не соответствует целочисленному");
         }
         return ProcessingCode.OK;
+    }
+
+    private void addToHistory(String command) {
+        history.add(command);
+        if (history.size() > MAX_HISTORY_SIZE) history.remove(0);
     }
 
     /**

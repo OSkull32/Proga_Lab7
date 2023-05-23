@@ -1,5 +1,6 @@
 package server;
 
+import com.sun.jdi.event.ThreadStartEvent;
 import common.exceptions.ClosingSocketException;
 import common.exceptions.ConnectionErrorException;
 import common.exceptions.OpeningServerSocketException;
@@ -10,23 +11,23 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Клас, который запускает сервер
  */
 public class Server {
+
+    private static final int MAX_CLIENTS_CONNECTED_AT_THE_SAME_TIME = 20;
+
     private final int port;
     private final HandleRequest handleRequest;
     private final CollectionManager collectionManager;
     private ServerSocket serverSocket;
-    private final List<Client> clientsWithRequests = Collections.synchronizedList(new LinkedList<>());
-    private final List<Client> clientsWithResponses = Collections.synchronizedList(new LinkedList<>());
+    private final ForkJoinPool forkJoinPool = new ForkJoinPool(MAX_CLIENTS_CONNECTED_AT_THE_SAME_TIME);
+    private final BlockingQueue<Client> clientsWithRequests = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Client> clientsWithResponses = new LinkedBlockingQueue<>();
 
     public Server(int port, HandleRequest handleRequest, CollectionManager collectionManager) {
         this.port = port;
@@ -40,25 +41,35 @@ public class Server {
      * Как только клиент подключается, метод добавляет его в (мнимый) пул клиентов, от которых
      * сервер готов принимать запросы
      */
-    public void run() { //ПОТОК №1 (метод запускается в единственном потоке)
+    public void run() { //(не)ПОТОК №1 (метод запускается в единственном потоке) (теперь даже необязательно в потоке так как он сразу кончается)
         try {
             openServerSocket();
         } catch (OpeningServerSocketException ex) {
             App.logger.severe("Сервер не может быть запущен");
         }
-        while (true) {
+        RecursiveAction recursiveAction = new RecursiveClientReceiver();
+        forkJoinPool.execute(recursiveAction);
+    }
+
+    //это что, внутренний класс?
+    private class RecursiveClientReceiver extends RecursiveAction {
+        @Override
+        protected void compute() {
+            App.logger.info("Сервер готов к приему новых клиентов " + Thread.currentThread().getName());
             try {
                 //блокируется до подключения нового клиента
                 Socket clientSocket = connectToClient(); //Появился новый клиент
-                App.logger.info("Соединение с клиентом успешно установлено");
-                new Thread(() -> receiveNewClientAndWaitForRequest(clientSocket)).start(); //Отправляем его ждать в новый поток
-                App.logger.info("Сервер готов к приему новых клиентов");
-
+                RecursiveAction nextClient = new RecursiveClientReceiver();
+                nextClient.fork(); //в новом потоке ждем новых клиентов
+                receiveNewClientAndWaitForRequest(clientSocket); //в этом потоке слушаем запросы от этого клиента
             } catch (ConnectionErrorException | IOException e) {
-                App.logger.severe("Проблемы с подключением на серверном сокете");
+                if (serverSocket.isClosed()) {
+                    App.logger.info("Закрыт серверный сокет");
+                } else {
+                    App.logger.severe("Проблемы с подключением на серверном сокете");
+                }
             }
         }
-
     }
 
     /**
@@ -81,11 +92,8 @@ public class Server {
         while (true) {
             try {
                 client.waitRequest(); //блокируется до получения реквеста
-                clientsWithRequests.add(client.clone());
+                clientsWithRequests.put(client.clone());
                 App.logger.info("Получен новый запрос");
-                synchronized (clientsWithRequests) { //может не нужно
-                    clientsWithRequests.notify();
-                }
 
             } catch (ClassNotFoundException e) {
                 App.logger.warning("Был получен запрос неправильного типа. Прием запросов будет продолжен");
@@ -96,6 +104,8 @@ public class Server {
                 App.logger.severe("Ошибка в соединении с клиентом. Клиент будет окончательно отключен");
                 client.disconnectClient();
                 break;
+            } catch (InterruptedException e) {
+                App.logger.warning("Был прерван поток чтения клиентских запросов");
             }
         }
     }
@@ -106,25 +116,19 @@ public class Server {
      */
     public void processClientRequest() { // ПОТОК № 2
         while (true) {
-            if (!clientsWithRequests.isEmpty()) {
-                Client clientWithRequest = clientsWithRequests.remove(0);
+            try {
+                Client clientWithRequest = clientsWithRequests.take();
                 new Thread(() -> {
-                    clientsWithResponses.add(handleRequest.handle(clientWithRequest));
-                    App.logger.info("Запрос был обработан сервером");
-                    synchronized (clientsWithResponses) { //может не нужно
-                        clientsWithResponses.notify();
+                    try {
+                        clientsWithResponses.put(handleRequest.handle(clientWithRequest));
+                        App.logger.info("Запрос был обработан сервером");
+                    } catch (InterruptedException e) {
+                        App.logger.warning("Была прервана обработка запроса от клиента");
                     }
                 }).start();
-
-            } else {
-                synchronized (clientsWithRequests) { //хз насчет этого куска кода
-                    try {
-                        clientsWithRequests.wait();
-                    } catch (InterruptedException e) {
-                        App.logger.warning("Был прерван поток обработки клиентских запросов");
-                        break;
-                    }
-                }
+            } catch (InterruptedException e) {
+                App.logger.warning("Был прерван поток обработки клиентских запросов");
+                break;
             }
         }
     }
@@ -136,19 +140,13 @@ public class Server {
     public void sendResponses() { // ПОТОК № 3
         ExecutorService executor = Executors.newCachedThreadPool();
         while (true) {
-            if (!clientsWithResponses.isEmpty()) { //может быть эта строчка не нужна
-                Client clientWithResponse = clientsWithResponses.remove(0);
+            try {
+                Client clientWithResponse = clientsWithResponses.take();
                 executor.execute(() -> sendResponseToClient(clientWithResponse));
-
-            } else {
-                synchronized (clientsWithResponses) { //хз насчет этого куска кода
-                    try {
-                        clientsWithResponses.wait();
-                    } catch (InterruptedException e) {
-                        executor.shutdown();
-                        break;
-                    }
-                }
+            } catch (InterruptedException e) {
+                App.logger.warning("Был прерван поток отправки ответов клиентам");
+                executor.shutdown();
+                break;
             }
         }
     }
@@ -197,7 +195,7 @@ public class Server {
         try {
             serverSocket = new ServerSocket(port);
         } catch (IllegalArgumentException ex) {
-            App.logger.severe("Порт '" + port + "' не валидное значение порта");
+            App.logger.severe("Порт '" + port + "' невалидное значение порта");
             throw new OpeningServerSocketException();
         } catch (IOException ex) {
             App.logger.severe("При попытке использовать порт возникла ошибка " + port);
@@ -221,7 +219,6 @@ public class Server {
             App.logger.warning("Превышено время ожидания подключения");
             throw ex;
         } catch (IOException ex) {
-            App.logger.severe("Произошла ошибка при соединении с клиентом!");
             throw new ConnectionErrorException();
         }
     }
@@ -260,32 +257,28 @@ public class Server {
     /**
      * Метод запускает управление сервера через серверную консоль
      */
-    public void controlServer(Thread threadToControl) {
+    public void controlServer(Thread ... threadsToControl) {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             String command = scanner.nextLine();
-            if (!threadToControl.isAlive()) {
-                break;
-            }
             switch (command) {
-                case "save" -> {
-                    try {
-                        ServerFileManager.writeToFile(App.FILE_PATH, JsonParser.encode(collectionManager.getCollection()));
-                        System.out.println("Коллекция сохранена");
-                    } catch (IOException e) {
-                        System.out.println("Ошибка при сохранении коллекции");
-                    }
-                }
                 case "exit" -> {
-                    try { //закрытие сокета
-                        if (!serverSocket.isClosed()) {
-                            serverSocket.close();
-                        }
-                    } catch (IOException e) {
-                        //
+                    System.out.println("Выхожу");
+
+                    forkJoinPool.shutdown();
+
+                    for (Thread t : threadsToControl) {
+                        t.interrupt();
                     }
 
-                    System.out.println("Выхожу");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ignore) {}
+
+                    try { //закрытие сокета
+                        serverSocket.close();
+                    } catch (IOException ignore) {}
+
                     System.exit(0);
                 }
                 default -> {
