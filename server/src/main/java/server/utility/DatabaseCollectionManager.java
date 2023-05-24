@@ -193,12 +193,20 @@ public class DatabaseCollectionManager {
             ResultSet resultSet = preparedSelectHouseStatement.executeQuery();
             //UserConsole.printCommandTextNext(String.valueOf(resultSet.next()));
             App.logger.info("Выполнен запрос SELECT_HOUSE_BY_ID");
+            Long number_of_floors = null;
+            Long number_of_lifts = null;
             if (resultSet.next()) {
+                if (resultSet.getObject(DatabaseHandler.HOUSE_TABLE_NUMBER_OF_FLOORS_COLUMN) != null) {
+                    number_of_floors = resultSet.getLong(DatabaseHandler.HOUSE_TABLE_NUMBER_OF_FLOORS_COLUMN);
+                }
+                if (resultSet.getObject(DatabaseHandler.HOUSE_TABLE_NUMBER_OF_LIFTS_COLUMN) != null) {
+                    number_of_lifts = resultSet.getLong(DatabaseHandler.HOUSE_TABLE_NUMBER_OF_LIFTS_COLUMN);
+                }
                 house = new House(resultSet.getString(DatabaseHandler.HOUSE_TABLE_NAME_COLUMN),
                         resultSet.getInt(DatabaseHandler.HOUSE_TABLE_YEAR_COLUMN),
-                        resultSet.getLong(DatabaseHandler.HOUSE_TABLE_NUMBER_OF_FLOORS_COLUMN),
+                        number_of_floors,
                         resultSet.getLong(DatabaseHandler.HOUSE_TABLE_NUMBER_OF_FLATS_ON_FLOOR_COLUMN),
-                        resultSet.getLong(DatabaseHandler.HOUSE_TABLE_NUMBER_OF_LIFTS_COLUMN));
+                        number_of_lifts);
             } else throw new SQLException();
         } catch (SQLException ex) {
             App.logger.severe("Произошла ошибка при выполнении запроса SELECT_HOUSE_BY_ID");
@@ -228,9 +236,9 @@ public class DatabaseCollectionManager {
             if (flat.getHouse() != null) {
                 preparedInsertHouseStatement.setString(1, flat.getHouse().getName());
                 preparedInsertHouseStatement.setInt(2, flat.getHouse().getYear());
-                preparedInsertHouseStatement.setLong(3, flat.getHouse().getNumberOfFloors());
+                preparedInsertHouseStatement.setObject(3, flat.getHouse().getNumberOfFloors() == null ? null : flat.getHouse().getNumberOfFloors());
                 preparedInsertHouseStatement.setLong(4, flat.getHouse().getNumberOfFlatsOnFloor());
-                preparedInsertHouseStatement.setLong(5, flat.getHouse().getNumberOfLifts());
+                preparedInsertHouseStatement.setObject(5, flat.getHouse().getNumberOfLifts() == null ? null : flat.getHouse().getNumberOfLifts());
                 if (preparedInsertHouseStatement.executeUpdate() == 0) throw new SQLException();
                 ResultSet generateHouseKeys = preparedInsertHouseStatement.getGeneratedKeys();
                 if (generateHouseKeys.next()) {
@@ -401,6 +409,7 @@ public class DatabaseCollectionManager {
             if (preparedDeleteFlatStatement.executeUpdate() == 0) throw new SQLException();
             App.logger.info("Выполнен запрос DELETE_FLAT_BY_ID");
 
+            preparedDeleteHouseStatement.executeUpdate();
             App.logger.info("Выполнен запрос DELETE_HOUSE_BY_ID");
         } catch (SQLException ex) {
             ex.printStackTrace();
