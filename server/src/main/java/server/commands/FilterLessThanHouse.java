@@ -43,7 +43,7 @@ public class FilterLessThanHouse implements Command {
             Long numberOfLifts;
 
             if (objectArgument == null) {
-                return "Передан дом == NULL";
+                return "Передан дом == NULL\n";
             }
             if (objectArgument instanceof House house) { //pattern variable
                 year = house.getYear();
@@ -66,7 +66,7 @@ public class FilterLessThanHouse implements Command {
         } catch (NumberFormatException e) {
             throw new WrongArgumentException("Аргумент должен быть числом.");
         } catch (ArrayIndexOutOfBoundsException ex) {
-            builder.append("Ошибка: Не указаны аргументы команды, необходимо ввести 4 аргумента через пробел").append("\n");
+            builder.append("Ошибка: Не указаны аргументы команды, необходимо ввести 4 аргумента через пробел\n");
         }
         return builder.toString();
     }

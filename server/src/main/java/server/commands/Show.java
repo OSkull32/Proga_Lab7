@@ -6,6 +6,7 @@ import common.interaction.User;
 import server.utility.CollectionManager;
 
 import java.util.Hashtable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Класс команды, которая показывает содержимое коллекции
@@ -32,9 +33,11 @@ public class Show implements Command {
         Hashtable<Integer, Flat> hashtable = collectionManager.getCollection();
         var builder = new StringBuilder();
         if (hashtable.size() == 0) {
-            builder.append("Коллекция пуста");
+            builder.append("Коллекция пуста\n");
         } else {
-            hashtable.forEach((key, flat) -> builder.append("\nЭлемент: ").append(key).append("\n").append(flat.toString()).append("\n"));
+            AtomicInteger number = new AtomicInteger(1);
+            hashtable.forEach((key, flat) -> builder.append("\nЭлемент №").append(number.getAndIncrement()).append("\n")
+                    .append(flat.toString()).append("\n"));
         }
         return builder.toString();
     }

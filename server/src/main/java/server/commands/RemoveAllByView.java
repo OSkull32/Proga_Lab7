@@ -56,18 +56,18 @@ public class RemoveAllByView implements Command {
                     size += 1;
                 }
             }
-            if (size == 0) builder.append("В коллекции нет элементов принадлежащих вам с заданным значением").append("\n");
-            else builder.append("Было очищено ").append(count).append(" элементов").append("\n");
+            if (size == 0) builder.append("В коллекции нет элементов принадлежащих вам с заданным значением\n");
+            else builder.append("Было очищено ").append(count).append(" элементов\n");
         } catch (IllegalArgumentException ex) {
-            builder.append("Ошибка: Выбранной константы нет в перечислении.").append("\n");
-            builder.append("Список всех констант:").append("\n");
+            builder.append("Ошибка: Выбранной константы нет в перечислении.\n");
+            builder.append("Список всех констант:\n");
             for (View view : View.values()) {
-                builder.append(view.toString());
+                builder.append(view.toString()).append("\n");
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            builder.append("Ошибка: Не указаны аргументы команды.").append("\n");
+            builder.append("Ошибка: Не указаны аргументы команды.\n");
         } catch (DatabaseHandlingException ex) {
-            builder.append("Произошла ошибка при обращении к БД").append("\n");
+            builder.append("Произошла ошибка при обращении к БД.\n");
         }
         return builder.toString();
     }
