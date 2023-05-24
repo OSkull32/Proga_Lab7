@@ -33,8 +33,8 @@ public class DatabaseCollectionManager {
             DatabaseHandler.FLAT_TABLE_FURNISH_COLUMN + ", " +
             DatabaseHandler.FLAT_TABLE_VIEW_COLUMN + ", " +
             DatabaseHandler.FLAT_TABLE_HOUSE_ID_COLUMN + ", " +
-            DatabaseHandler.FLAT_TABLE_USER_ID_COLUMN + ") VALUES (?, ?, ?, ?, ?, ?," +
-            "?, ?, ?)";
+            DatabaseHandler.FLAT_TABLE_USER_ID_COLUMN + ") VALUES (?, ?, ?, ?, ?, ?::furnish," +
+            "?::view, ?, ?)";
     private final String DELETE_FLAT_BY_ID = "DELETE FROM " + DatabaseHandler.FLAT_TABLE +
             " WHERE " + DatabaseHandler.FLAT_TABLE_ID_COLUMN + " = ?";
     private final String UPDATE_FLAT_NAME_BY_ID = "UPDATE " + DatabaseHandler.FLAT_TABLE + " SET " +
@@ -53,10 +53,10 @@ public class DatabaseCollectionManager {
             DatabaseHandler.FLAT_TABLE_NUMBER_OF_BATHROOMS_COLUMN + " = ?" + " WHERE " +
             DatabaseHandler.FLAT_TABLE_ID_COLUMN + " = ?";
     private final String UPDATE_FLAT_FURNISH_BY_ID = "UPDATE " + DatabaseHandler.FLAT_TABLE + " SET " +
-            DatabaseHandler.FLAT_TABLE_FURNISH_COLUMN + " = ?" + " WHERE " +
+            DatabaseHandler.FLAT_TABLE_FURNISH_COLUMN + " = ?::furnish" + " WHERE " +
             DatabaseHandler.FLAT_TABLE_ID_COLUMN + " = ?";
     private final String UPDATE_FLAT_VIEW_BY_ID = "UPDATE " + DatabaseHandler.FLAT_TABLE + " SET " +
-            DatabaseHandler.FLAT_TABLE_VIEW_COLUMN + " = ?" + " WHERE " +
+            DatabaseHandler.FLAT_TABLE_VIEW_COLUMN + " = ?::view" + " WHERE " +
             DatabaseHandler.FLAT_TABLE_ID_COLUMN + " = ?";
 
     private final String SELECT_ALL_COORDINATES = "SELECT * FROM " + DatabaseHandler.COORDINATES_TABLE;
