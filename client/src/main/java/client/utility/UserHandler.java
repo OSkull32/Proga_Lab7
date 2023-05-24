@@ -146,7 +146,7 @@ public class UserHandler {
                     if (!commandArgument.isEmpty()) throw new CommandUsageException();
                 }
                 case "insert" -> {
-                    if (commandArgument.isEmpty() || Integer.parseInt(commandArgument) <= 0) throw new CommandUsageException("<Key'>0'> {element}");
+                    if (!commandArgument.isEmpty()) throw new CommandUsageException("{element}");
                     return ProcessingCode.OBJECT;
                 }
                 case "update" -> {

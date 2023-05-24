@@ -12,7 +12,7 @@ import server.utility.DatabaseCollectionManager;
  */
 public class Insert implements Command {
     private final CollectionManager collectionManager;
-    private DatabaseCollectionManager databaseCollectionManager;
+    private final DatabaseCollectionManager databaseCollectionManager;
 
     /**
      * Конструктор класса.
@@ -30,25 +30,24 @@ public class Insert implements Command {
      */
     @Override
     public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
-        if (args.isEmpty()) throw new WrongArgumentException();
+        if (!args.isEmpty()) throw new WrongArgumentException();
         var builder = new StringBuilder();
         try {
-            if (!collectionManager.containsKey(Integer.parseInt(args))) {
 
-                if (objectArgument instanceof Flat flat) {
-                    flat.setId(CollectionManager.generateId()); //устанавливается id
-                    builder.append(collectionManager.insert(Integer.parseInt(args), databaseCollectionManager.insertFlat(flat,user))).append("\n");
-                } else {
-                    throw new WrongArgumentException("Переданный объект не соответствует типу Flat");
-                }
+
+            if (objectArgument instanceof Flat flat) {
+                //flat.setId(0); //устанавливается id
+                Flat aFlat = databaseCollectionManager.insertFlat(flat,user);
+                builder.append(collectionManager.insert(aFlat.getId(), aFlat)).append("\n");
             } else {
-                builder.append("Ошибка: Элемент с данным ключом уже существует в коллекции").append("\n");
+                throw new WrongArgumentException("Переданный объект не соответствует типу Flat");
             }
+
         } catch (IndexOutOfBoundsException ex) {
-            builder.append("Ошибка: Не указаны аргументы команды.").append("\n");
+            builder.append("Ошибка: Не указаны аргументы команды.\n");
         } catch (NumberFormatException ignored) {
         } catch (DatabaseHandlingException ex) {
-            builder.append("Произошла ошибка при обращении к базе данных!");
+            builder.append("Произошла ошибка при обращении к базе данных!\n");
         }
         return builder.toString();
     }
