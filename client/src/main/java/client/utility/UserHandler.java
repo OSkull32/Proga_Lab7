@@ -117,6 +117,7 @@ public class UserHandler {
                 throw new ErrorInScriptException();
             } catch (NumberFormatException ignored) {
             } catch (Exception ex) {
+                ex.printStackTrace();
                 UserConsole.printCommandError("Выполнение команды прервано");
             }
         } catch (ErrorInScriptException ex) {
@@ -173,8 +174,6 @@ public class UserHandler {
                 case "history" -> {
                     UserConsole.printCommandTextNext("Последние " + history.size() + " команд(ы): " +
                             history.toString().replace("[", "").replace("]", ""));
-                    addToHistory(command);
-                    return ProcessingCode.ERROR;
                 }
                 default -> {
                     UserConsole.printCommandTextNext("Команда '" + command + "' не найдена. Наберите 'help' для справки.");
