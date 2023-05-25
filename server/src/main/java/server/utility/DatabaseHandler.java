@@ -51,6 +51,61 @@ public class DatabaseHandler {
         this.password = password;
 
         connectToDataBase();
+        createDatabase();
+    }
+
+    private void createDatabase() {
+        try {
+            Statement statement = connection.createStatement();
+
+            statement.executeUpdate("DO $$ BEGIN" +
+                    "    CREATE TYPE furnish AS ENUM ('DESIGNER', 'NONE', 'FINE', 'BAD');" +
+                    "EXCEPTION" +
+                    "    WHEN duplicate_object THEN null;" +
+                    "END $$;");
+
+            statement.executeUpdate("DO $$ BEGIN" +
+                    "    CREATE TYPE view AS ENUM ('STREET', 'NORMAL', 'TERRIBLE');" +
+                    "EXCEPTION" +
+                    "    WHEN duplicate_object THEN null;" +
+                    "END $$;");
+
+            statement.executeUpdate(
+                    "CREATE TABLE IF NOT EXISTS my_user(" +
+                    "id SERIAL PRIMARY KEY, " +
+                    "username text NOT NULL, " +
+                    "password text NOT NULL)");
+            statement.executeUpdate(
+                    "CREATE TABLE IF NOT EXISTS house(id SERIAL PRIMARY KEY, " +
+                    "name text NOT NULL, " +
+                    "year INTEGER NOT NULL, " +
+                    "number_of_floors INTEGER, " +
+                    "number_of_flats_on_floors INTEGER NOT NULL, number_of_lifts INTEGER " +
+                    "CHECK(year > 0 AND number_of_floors > 0 AND number_of_floors <= 39 AND " +
+                    "number_of_flats_on_floors > 0 AND number_of_lifts > 0))");
+            statement.executeUpdate(
+                    "CREATE TABLE IF NOT EXISTS flat (id SERIAL PRIMARY KEY," +
+                    "name text NOT NULL," +
+                    "creation_date TIMESTAMP NOT NULL," +
+                    "area INTEGER NOT NULL," +
+                    "number_of_rooms INTEGER NOT NULL," +
+                    "number_of_bathrooms INTEGER NOT NULL," +
+                    "furnish furnish NOT NULL," +
+                    "view view," +
+                    "house_id INTEGER REFERENCES house(id)," +
+                    "user_id INTEGER REFERENCES my_user(id)" +
+                    "CHECK(area > 0 AND number_of_rooms <= 14 AND number_of_rooms > 0 AND number_of_bathrooms > 0))");
+            statement.executeUpdate(
+                    "CREATE TABLE IF NOT EXISTS coordinates(" +
+                            "id SERIAL PRIMARY KEY, " +
+                            "flat_id INTEGER REFERENCES flat(id), " +
+                            "x INTEGER NOT NULL," +
+                            "y INTEGER NOT NULL " +
+                            "CHECK(x <= 713 AND y > -397))");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void connectToDataBase() {
