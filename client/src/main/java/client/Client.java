@@ -113,6 +113,11 @@ public class Client {
         Response serverResponse = null;
         do {
             try {
+                if (serverResponse != null && serverResponse.getResponseCode() == ResponseCode.TOKEN_EXPIRED) {
+                    processAuthentication();
+                    serverResponse = null;
+                    continue;
+                }
                 requestToServer = serverResponse != null ? userHandler.handle(serverResponse.getResponseCode(), user) :
                         userHandler.handle(null, user);
                 if (requestToServer.isEmpty()) continue;
@@ -137,7 +142,7 @@ public class Client {
     }
 
     private void processAuthentication() {
-        Request requestToServer = null;
+        Request requestToServer;
         Response serverResponse = null;
         do {
             try {
@@ -159,6 +164,6 @@ public class Client {
                 }
             }
         } while (serverResponse == null || !serverResponse.getResponseCode().equals(ResponseCode.OK));
-        user = requestToServer.getUser();
+        user = serverResponse.getUser(); //юзер со свежим токеном
     }
 }

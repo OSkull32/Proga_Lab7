@@ -92,14 +92,11 @@ public class Server {
         while (true) {
             try {
                 client.waitRequest(); //блокируется до получения реквеста
-                clientsWithRequests.put(client.clone());
+                clientsWithRequests.put(client);
                 App.logger.info("Получен новый запрос");
 
             } catch (ClassNotFoundException e) {
                 App.logger.warning("Был получен запрос неправильного типа. Прием запросов будет продолжен");
-            } catch (CloneNotSupportedException e) {
-                App.logger.severe("Не удалось добавить клиента в пул реквкстов, так как " +
-                        "он не поддерживает клонирование. Прием запросов будет продолжен");
             } catch (IOException e) {
                 App.logger.severe("Ошибка в соединении с клиентом. Клиент будет окончательно отключен");
                 client.disconnectClient();

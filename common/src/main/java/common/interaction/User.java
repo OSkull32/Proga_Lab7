@@ -4,8 +4,9 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class User implements Serializable {
-    private String username;
-    private String password;
+    private final String username;
+    private final String password;
+    private String token;
 
     public User(String username, String password) {
         this.username = username;
@@ -20,9 +21,22 @@ public class User implements Serializable {
         return password;
     }
 
+    public String getToken() {
+        return token;
+    }
+
+    public User setToken(String token) {
+        this.token = token;
+        return this;
+    }
+
     @Override
     public String toString() {
-        return username + ":"+ password;
+        return "User{" +
+                "username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", token='" + token + '\'' +
+                '}';
     }
 
     @Override

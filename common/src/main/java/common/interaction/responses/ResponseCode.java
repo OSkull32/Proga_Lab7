@@ -6,5 +6,6 @@ package common.interaction.responses;
 public enum ResponseCode {
     OK,
     ERROR,
-    SERVER_EXIT
+    SERVER_EXIT,
+    TOKEN_EXPIRED
 }
