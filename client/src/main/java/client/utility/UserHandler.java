@@ -117,7 +117,6 @@ public class UserHandler {
                 throw new ErrorInScriptException();
             } catch (NumberFormatException ignored) {
             } catch (Exception ex) {
-                ex.printStackTrace();
                 UserConsole.printCommandError("Выполнение команды прервано");
             }
         } catch (ErrorInScriptException ex) {

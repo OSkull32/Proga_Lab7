@@ -104,7 +104,8 @@ public class DatabaseHandler {
                             "CHECK(x <= 713 AND y > -397))");
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            UserConsole.printCommandError("Произошла ошибка при создании базы данных");
+            App.logger.severe("Произошла ошибка при создании базы данных");
         }
     }
 
@@ -115,7 +116,6 @@ public class DatabaseHandler {
             UserConsole.printCommandTextNext("Соединение с базой данных установлено");
             App.logger.info("Соединение с базой данных установлено");
         } catch (SQLException ex) {
-            ex.printStackTrace();
             UserConsole.printCommandError("Произошла ошибка при подключении к базе данных");
             App.logger.severe("Произошла ошибка при подключении к базе данных");
         } catch (ClassNotFoundException ex) {

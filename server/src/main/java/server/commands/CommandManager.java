@@ -60,7 +60,7 @@ public class CommandManager {
         addCommand("remove_key", new RemoveKey(collectionManager, databaseCollectionManager));
         addCommand("remove_lower_key", new RemoveLowerKey(collectionManager, databaseCollectionManager));
         //addCommand("save", new Save(collectionManager, console, fileManager));
-        addCommand("show", new Show(collectionManager));
+        addCommand("show", new Show(collectionManager, databaseCollectionManager));
         addCommand("register", new Register(databaseUserManager));
         addCommand("login", new Login(databaseUserManager));
     }

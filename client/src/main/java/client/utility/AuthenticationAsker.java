@@ -25,11 +25,12 @@ public class AuthenticationAsker {
                 UserConsole.printCommandText(App.PS2);
                 login = userScanner.nextLine().trim();
                 if (login.equals("")) throw new WrongArgumentException();
+                if (login.length() > 10 || login.length() < 4) throw new WrongArgumentException();
                 break;
             } catch (NoSuchElementException ex) {
                 UserConsole.printCommandError("Данного логина не существует");
             } catch (WrongArgumentException ex) {
-                UserConsole.printCommandError("Логин не может быть пустым");
+                UserConsole.printCommandError("Логин не может быть пустым и должен состоять от 4 до 10 символов");
             } catch (IllegalArgumentException ex) {
                 UserConsole.printCommandError("Ошибка при вводе логина");
                 System.exit(0);
@@ -45,12 +46,17 @@ public class AuthenticationAsker {
                 UserConsole.printCommandTextNext("Введите пароль:");
                 UserConsole.printCommandText(App.PS2);
                 password = userScanner.nextLine().trim();
+                if (password.equals("")) throw new WrongArgumentException();
+                if (password.length() > 10 || password.length() < 4) throw new WrongArgumentException();
+                if (!password.matches("\\S*")) throw new WrongArgumentException();
                 break;
             } catch (NoSuchElementException ex) {
                 UserConsole.printCommandError("Неверный пароль");
             } catch (IllegalArgumentException ex) {
                 UserConsole.printCommandError("Ошибка при вводе пароля");
                 System.exit(0);
+            } catch (WrongArgumentException ex) {
+                UserConsole.printCommandError("Пароль не может быть пустым и должен состоять от 4 до 10 символов, также не должен содержать пробелов");
             }
         }
         return password;
