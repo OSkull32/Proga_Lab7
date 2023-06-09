@@ -94,6 +94,9 @@ public class DatabaseCollectionManager {
     private final String DELETE_HOUSE_BY_ID = "DELETE FROM " + DatabaseHandler.HOUSE_TABLE +
             " WHERE " + DatabaseHandler.HOUSE_TABLE_ID_COLUMN + " = ?";
 
+    private final String SELECT_USER_BY_FLAT_ID =  "SELECT " + DatabaseHandler.USER_TABLE_USERNAME_COLUMN +
+            " FROM " + DatabaseHandler.FLAT_TABLE + " JOIN  " + DatabaseHandler.USER_TABLE + " ON flat.user_id = my_user.id WHERE flat.id = ?";
+
     private final DatabaseHandler databaseHandler;
     private final DatabaseUserManager databaseUserManager;
 
@@ -141,6 +144,26 @@ public class DatabaseCollectionManager {
             databaseHandler.closePreparedStatement(preparedSelectAllStatement);
         }
         return flatList;
+    }
+
+    public String getUsernameByFlatId(int flatId) throws SQLException {
+        String username;
+        PreparedStatement preparedStatement = null;
+        try {
+            preparedStatement = databaseHandler.getPreparedStatement(SELECT_USER_BY_FLAT_ID, false);
+            preparedStatement.setInt(1, flatId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            App.logger.info("Выполнен запрос SELECT_USER_BY_FLAT_ID");
+            if (resultSet.next()) {
+                username = resultSet.getString(DatabaseHandler.USER_TABLE_USERNAME_COLUMN);
+            } else throw new SQLException();
+        } catch (SQLException ex) {
+            App.logger.severe("Произошла ошибка при выполнении запроса SELECT_USER_BY_FLAT_ID");
+            throw new SQLException();
+        } finally {
+            databaseHandler.closePreparedStatement(preparedStatement);
+        }
+        return username;
     }
 
     private int getHouseIdByFlatId(int flatId) throws SQLException {
