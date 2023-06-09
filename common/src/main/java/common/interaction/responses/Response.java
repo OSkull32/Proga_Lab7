@@ -1,5 +1,7 @@
 package common.interaction.responses;
 
+import common.interaction.User;
+
 import java.io.Serializable;
 
 /**
@@ -8,10 +10,12 @@ import java.io.Serializable;
 public class Response implements Serializable {
     private ResponseCode responseCode;
     private String responseBody;
+    private User user;
 
-    public Response(ResponseCode responseCode, String responseBody) {
+    public Response(ResponseCode responseCode, String responseBody, User user) {
         this.responseCode = responseCode;
         this.responseBody = responseBody;
+        this.user = user;
     }
 
     /**
@@ -26,6 +30,10 @@ public class Response implements Serializable {
      */
     public String getResponseBody() {
         return responseBody;
+    }
+
+    public User getUser() {
+        return user;
     }
 
     @Override

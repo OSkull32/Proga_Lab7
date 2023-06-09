@@ -11,6 +11,8 @@ subprojects {
     dependencies {
         // https://mvnrepository.com/artifact/com.google.code.gson/gson
         implementation 'com.google.code.gson:gson:2.10.1'
+        // JWT token
+        implementation 'com.auth0:java-jwt:3.14.0'
     }
 }
 

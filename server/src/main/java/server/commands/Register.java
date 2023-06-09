@@ -4,6 +4,7 @@ import common.exceptions.DatabaseHandlingException;
 import common.exceptions.UserAlreadyExistsException;
 import common.exceptions.WrongArgumentException;
 import common.interaction.User;
+import common.utility.JWTService;
 import server.utility.DatabaseUserManager;
 
 public class Register implements Command{
@@ -17,9 +18,10 @@ public class Register implements Command{
         if (!args.isEmpty()) throw new WrongArgumentException();
         var builder = new StringBuilder();
         try {
-            if (databaseUserManager.insertUser(user))
-                builder.append("Пользователь ").append(user.getUsername()).append(" зарегистрирован").append("\n");
-            else throw new UserAlreadyExistsException();
+            if (databaseUserManager.insertUser(user)) {
+            builder.append("Пользователь ").append(user.getUsername()).append(" зарегистрирован").append("\n");
+            user.setToken(JWTService.generateToken(user.getUsername()));
+        } else throw new UserAlreadyExistsException();
         } catch (ClassCastException ex) {
             builder.append("Переданный объект неверен").append("\n");
         } catch (DatabaseHandlingException ex) {

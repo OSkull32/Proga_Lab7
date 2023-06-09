@@ -5,22 +5,25 @@ import common.exceptions.UserAlreadyExistsException;
 import common.exceptions.UserIsNotFoundException;
 import common.exceptions.WrongArgumentException;
 import common.interaction.User;
+import common.utility.JWTService;
 import server.utility.DatabaseUserManager;
 
 public class Login implements Command{
-    private DatabaseUserManager databaseUserManager;
+    private final DatabaseUserManager databaseUserManager;
 
     public Login(DatabaseUserManager databaseUserManager) {
         this.databaseUserManager = databaseUserManager;
     }
+
     @Override
     public String execute(String args, Object objectArgument, User user) throws WrongArgumentException {
         if (!args.isEmpty()) throw new WrongArgumentException();
         var builder = new StringBuilder();
         try {
-            if (databaseUserManager.checkUserByUsernameAndPassword(user))
+            if (databaseUserManager.checkUserByUsernameAndPassword(user)) {
                 builder.append("Пользователь ").append(user.getUsername()).append(" авторизован").append("\n");
-            else throw new UserIsNotFoundException();
+                user.setToken(JWTService.generateToken(user.getUsername()));
+            } else throw new UserIsNotFoundException();
         } catch (ClassCastException ex) {
             builder.append("Переданный объект неверен").append("\n");
         } catch (DatabaseHandlingException ex) {
