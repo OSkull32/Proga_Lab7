@@ -42,7 +42,7 @@ public class JWTService {
     public static String getUsername(String token) {
         try {
             DecodedJWT decodedJWT = JWT.decode(token);
-            return decodedJWT.getClaims().get(CLAIM_USERNAME).toString();
+            return decodedJWT.getClaims().get(CLAIM_USERNAME).toString().replace("\"", "");
         } catch (Exception e) {
             return "";
         }
