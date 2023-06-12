@@ -106,6 +106,9 @@ public class DatabaseHandler {
         } catch (SQLException e) {
             UserConsole.printCommandError("Произошла ошибка при создании базы данных");
             App.logger.severe("Произошла ошибка при создании базы данных");
+        } catch (NullPointerException ex) {
+            UserConsole.printCommandError("Нет подключения к бд");
+            App.logger.severe("Нет подключения к бд");
         }
     }
 

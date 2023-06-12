@@ -138,7 +138,6 @@ public class DatabaseCollectionManager {
                 flatList.put(key, createFlat(resultSet));
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
             throw new DatabaseHandlingException();
         } finally {
             databaseHandler.closePreparedStatement(preparedSelectAllStatement);
@@ -300,7 +299,6 @@ public class DatabaseCollectionManager {
             databaseHandler.commit();
             return flat1;
         } catch (SQLException ex) {
-            ex.printStackTrace();
             App.logger.severe("Произошла ошибка при выполнении группы запросов на добавление нового объекта");
             databaseHandler.rollback();
             throw new DatabaseHandlingException();
@@ -435,7 +433,6 @@ public class DatabaseCollectionManager {
             preparedDeleteHouseStatement.executeUpdate();
             App.logger.info("Выполнен запрос DELETE_HOUSE_BY_ID");
         } catch (SQLException ex) {
-            ex.printStackTrace();
             App.logger.severe("Произошла ошибка при выполнении запроса DELETE_HOUSE_BY_ID");
             databaseHandler.rollback();
             throw new DatabaseHandlingException();
